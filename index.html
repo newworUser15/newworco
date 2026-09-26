@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEWWOR Consulting</title>
+<meta name="description" content="Digital Operations, applications et business management : le site vitrine et l'espace client NEWWOR Consulting.">
+
+<!-- PWA -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0d2340">
+
+<!-- Favicons -->
+<link rel="icon" href="./assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./assets/icons/favicon-16.png">
+
+<!-- iOS : Safari ignore une partie du manifest et lit ces balises -->
+<link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NEWWOR">
+
+<!-- Android / autres navigateurs bases sur Chromium -->
+<meta name="mobile-web-app-capable" content="yes">
+
+<script>
+  // Sert React / ReactDOM / Babel depuis le dossier local assets/vendor/
+  // au lieu de unpkg.com (fiabilite hors-ligne + pas de dependance a un CDN externe)
+  window.__resources = {
+    "https://unpkg.com/react@18.3.1/umd/react.production.min.js": "./assets/vendor/react.production.min.js",
+    "https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js": "./assets/vendor/react-dom.production.min.js",
+    "https://unpkg.com/@babel/standalone@7.29.0/babel.min.js": "./assets/vendor/babel.min.js"
+  };
+</script>
+<script src="./support.js"></script>
+
+<!-- Backend (Supabase) : authentification et donnees persistantes du portail client.
+     Bibliotheque vendorisee localement (meme logique que React/Babel ci-dessus).
+     La cle ci-dessous est la cle publique "anon" : concue pour etre visible cote
+     navigateur, la securite reelle des donnees est assuree par les policies RLS
+     definies dans supabase_schema.sql (chaque client ne voit que ses propres lignes). -->
+<script src="./assets/vendor/supabase.min.js"></script>
+<script>
+  window.__sb = window.supabase.createClient(
+    "https://djozfxsjfcrfdjcwzdvd.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqb3pmeHNqZmNyZmRqY3d6ZHZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5MjA1MjUsImV4cCI6MjEwNTQ5NjUyNX0.98rn8esEM2bd9ftocjiAtcTzaGMQrl9kpKLuTNtyP0A"
+  );
+</script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  @font-face { font-family: system-ui; }
+  body { margin: 0; }
+  ::selection { background: #c9922e33; }
+  .nwr-btn { transition: background .15s, border-color .15s, color .15s, transform .1s; cursor: pointer; }
+  .nwr-btn:active { transform: scale(0.98); }
+  .nwr-row:hover { background: #f6f7f9 !important; }
+
+  /* --- Filet de securite anti-debordement horizontal (tous ecrans) --- */
+  /* Le framework du site injecte html,body,#dc-root,.sc-host{height:100%} sur toute page
+     hors editeur -> ca empeche completement le defilement des qu'une page depasse un ecran.
+     On neutralise ca : le dashboard (isApp) garde son propre scroll interne via des
+     hauteurs en 100vh sur .nwr-sidebar/.nwr-app-content, independantes de ceci. */
+  html, body { overflow-x: hidden; height: auto !important; }
+  #dc-root, #dc-root > .sc-host { height: auto !important; }
+  img { max-width: 100%; }
+  .nwr-modal-460 { max-width: calc(100vw - 32px); }
+  .nwr-card-400 { max-width: calc(100vw - 32px); }
+
+  /* --- Mobile / tablette --- */
+  @media (max-width: 768px) {
+    .nwr-header { padding: 12px 20px !important; flex-wrap: wrap; row-gap: 8px; }
+    .nwr-header-nav { gap: 14px !important; }
+
+    .nwr-section-x { padding-left: 20px !important; padding-right: 20px !important; }
+
+    .nwr-hero-grid {
+      grid-template-columns: 1fr !important;
+      padding: 40px 20px 32px !important;
+      gap: 32px !important;
+    }
+    .nwr-grid-3, .nwr-grid-2 { grid-template-columns: 1fr !important; }
+    .nwr-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+
+    .nwr-footer-bar {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 16px !important;
+      padding: 28px 20px !important;
+    }
+    .nwr-footer-links {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 12px !important;
+      width: 100%;
+    }
+    .nwr-footer-links a, .nwr-footer-links span {
+      display: block;
+      padding: 4px 0;
+    }
+    .nwr-footer-links span {
+      color: #16223a;
+      font-weight: 600;
+    }
+
+    .nwr-center-main { padding: 24px !important; }
+
+    /* Espace client : le menu lateral devient une barre collante en haut avec un vrai
+       bouton hamburger -- replie par defaut, deroule au clic (voir le script en bas de page) */
+    .nwr-app-shell { flex-direction: column !important; min-height: auto !important; }
+    .nwr-sidebar {
+      width: 100% !important;
+      height: auto !important;
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 50;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      padding: 0 !important;
+      gap: 0 !important;
+    }
+    .nwr-sidebar-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+    }
+    .nwr-sidebar-bar > div:first-child { padding: 0 !important; }
+    #nwr-hamburger-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      width: 40px;
+      height: 40px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0;
+    }
+    #nwr-hamburger-btn span {
+      display: block;
+      width: 18px;
+      height: 2px;
+      background: #fff;
+      border-radius: 2px;
+      transition: transform .15s, opacity .15s;
+    }
+    .nwr-sidebar.nwr-menu-open #nwr-hamburger-btn span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .nwr-sidebar.nwr-menu-open #nwr-hamburger-btn span:nth-child(2) { opacity: 0; }
+    .nwr-sidebar.nwr-menu-open #nwr-hamburger-btn span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+    .nwr-sidebar-nav, .nwr-sidebar-foot { display: none !important; }
+    .nwr-sidebar.nwr-menu-open .nwr-sidebar-nav,
+    .nwr-sidebar.nwr-menu-open .nwr-sidebar-foot { display: flex !important; }
+    .nwr-sidebar-nav {
+      flex-direction: column !important;
+      gap: 3px !important;
+      padding: 4px 16px 14px !important;
+    }
+    .nwr-sidebar-nav a { padding: 12px 12px !important; font-size: 15px !important; }
+    .nwr-sidebar-foot {
+      width: 100% !important;
+      margin-top: 0 !important;
+      padding: 14px 16px !important;
+      border-top: 1px solid #ffffff22;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 4px !important;
+      box-sizing: border-box;
+    }
+    .nwr-app-content { padding: 20px !important; }
+
+    /* Tableaux (devis/factures/tickets) : cartes empilees plutot que colonnes ecrasees ou
+       defilement horizontal. On masque l'entete de colonnes (inutile en carte) et on
+       reordonne les champs de chaque ligne avec `order`, sans toucher au HTML. */
+    .nwr-table-wrap { overflow-x: visible !important; }
+    .nwr-table-row[style*="font-weight: 700"] { display: none !important; } /* entetes de colonnes */
+
+    .nwr-table-row:not([style*="font-weight: 700"]) {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      align-items: center !important;
+      row-gap: 4px;
+      column-gap: 10px;
+      padding: 14px 16px !important;
+    }
+    .nwr-table-row:not([style*="font-weight: 700"]) > span {
+      order: 2;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    /* Devis : Reference + Statut / Objet / Montant -- date masquee (dispo dans le detail) */
+    .nwr-table-row[style*="1fr 2fr 1fr 1fr 100px"]:not([style*="font-weight: 700"]) > div:nth-child(1) { order: 1; }
+    .nwr-table-row[style*="1fr 2fr 1fr 1fr 100px"]:not([style*="font-weight: 700"]) > div:nth-child(2) { order: 3; flex-basis: 100%; }
+    .nwr-table-row[style*="1fr 2fr 1fr 1fr 100px"]:not([style*="font-weight: 700"]) > div:nth-child(3) { display: none; }
+    .nwr-table-row[style*="1fr 2fr 1fr 1fr 100px"]:not([style*="font-weight: 700"]) > div:nth-child(4) { order: 4; flex-basis: 100%; font-size: 13px; color: #62728a; }
+
+    /* Factures : Reference + Statut / Echeance / Montant -- l'echeance reste visible (plus utile ici) */
+    .nwr-table-row[style*="1fr 1fr 1fr 1fr 100px"]:not([style*="font-weight: 700"]) > div:nth-child(1) { order: 1; }
+    .nwr-table-row[style*="1fr 1fr 1fr 1fr 100px"]:not([style*="font-weight: 700"]) > div:nth-child(2) { order: 3; flex-basis: 100%; }
+    .nwr-table-row[style*="1fr 1fr 1fr 1fr 100px"]:not([style*="font-weight: 700"]) > div:nth-child(3) { order: 4; flex-basis: 100%; font-size: 13px; }
+    .nwr-table-row[style*="1fr 1fr 1fr 1fr 100px"]:not([style*="font-weight: 700"]) > div:empty { display: none; }
+
+    /* Tickets : Reference + Statut / Sujet -- date de mise a jour masquee */
+    .nwr-table-row[style*="1fr 2.5fr 1fr 120px"]:not([style*="font-weight: 700"]) > div:nth-child(1) { order: 1; }
+    .nwr-table-row[style*="1fr 2.5fr 1fr 120px"]:not([style*="font-weight: 700"]) > div:nth-child(2) { order: 3; flex-basis: 100%; }
+    .nwr-table-row[style*="1fr 2.5fr 1fr 120px"]:not([style*="font-weight: 700"]) > div:nth-child(3) { display: none; }
+  }
+</style>
+</helmet>
+<div style="font-family: Helvetica, Arial, sans-serif; background: {{ bg }}; color: {{ textDark }}; min-height: 100vh; display: flex; flex-direction: column;">
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 500; background: {{ navy900 }}; color: #fff; padding: 14px 20px; border-radius: 8px; box-shadow: 0 8px 24px rgba(13,35,64,0.25); font-size: 14px; max-width: 320px;">{{ toast }}</div>
+  </sc-if>
+
+  <sc-if value="{{ isPublic }}" hint-placeholder-val="{{ true }}">
+    <header class="nwr-header" style="position: sticky; top: 0; z-index: 100; background: #ffffffee; backdrop-filter: blur(6px); border-bottom: 1px solid {{ border }}; display: flex; align-items: center; justify-content: space-between; padding: 16px 48px;">
+      <div style="display: flex; align-items: center; gap: 10px; cursor: pointer;" onClick="{{ goHome }}">
+        <img src="assets/newwor-logo-gold.png" alt="NEWWOR Consulting" style="height: 40px; width: auto; display: block;">
+      </div>
+      <nav class="nwr-header-nav" style="display: flex; align-items: center; gap: 32px;">
+        <a href="#" onClick="{{ goHome }}" style="text-decoration: none; font-size: 15px; color: {{ navHomeColor }}; font-weight: {{ navHomeWeight }};">Accueil</a>
+        <a href="#" onClick="{{ goContact }}" style="text-decoration: none; font-size: 15px; color: {{ navContactColor }}; font-weight: {{ navContactWeight }};">Contact</a>
+        <a href="#" onClick="{{ goLogin }}" class="nwr-btn" style="text-decoration: none; font-size: 14px; font-weight: 600; color: #fff; background: {{ navy900 }}; padding: 10px 20px; border-radius: 6px;">Espace client</a>
+      </nav>
+    </header>
+  </sc-if>
+
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ false }}">
+    <main style="flex: 1;">
+      <section class="nwr-hero-grid" style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 64px; align-items: center; max-width: 1200px; margin: 0 auto; padding: 96px 48px 80px">
+        <div>
+          <div style="display: inline-block; background: #fbeed9; color: #8a5a12; font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 100px; margin-bottom: 20px;">Digital Operations · Application &amp; Logiciels · Business Management</div>
+          <h1 style="font-size: 48px; line-height: 1.1; margin: 0 0 20px; color: {{ navy900 }}; letter-spacing: -0.02em;">Simplifiez vos opérations, restez concentré sur votre métier.</h1>
+          <p style="font-size: 18px; line-height: 1.6; color: {{ textMuted }}; margin: 0 0 32px; max-width: 480px;">NEWWOR Consulting accompagne les entreprises dans la conception, le développement et l'évolution de leurs systèmes d'information afin d'améliorer leur efficacité et soutenir leur croissance.</p>
+          <div style="display: flex; gap: 16px;">
+            <button class="nwr-btn" onClick="{{ goRegister }}" style="background: {{ navy900 }}; color: #fff; border: none; padding: 14px 26px; border-radius: 6px; font-size: 15px; font-weight: 600;">Créer un compte</button>
+            <button class="nwr-btn" onClick="{{ goContact }}" style="background: #fff; color: {{ navy900 }}; border: 1px solid {{ border }}; padding: 14px 26px; border-radius: 6px; font-size: 15px; font-weight: 600;">Nous contacter</button>
+          </div>
+        </div>
+        <div style="border-radius: 16px; height: 380px; background: repeating-linear-gradient(135deg, #eef1f5, #eef1f5 12px, #e4e8ee 12px, #e4e8ee 24px); border: 1px solid {{ border }}; display: flex; align-items: center; justify-content: center; color: {{ textMuted }}; font-family: monospace; font-size: 13px;">visuel produit / dashboard</div>
+      </section>
+
+      <section class="nwr-section-x" style="padding: 40px 48px 8px;">
+        <div style="max-width: 1200px; margin: 0 auto; text-align: center;">
+          <div style="font-size: 13px; font-weight: 600; color: {{ textMuted }}; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 24px;">Ils nous font confiance</div>
+          <div style="display: flex; justify-content: center; align-items: center; gap: 48px; flex-wrap: wrap; opacity: 0.7;">
+            <sc-for list="{{ clientLogos }}" as="client" hint-placeholder-count="5">
+              <div style="height: 32px; display: flex; align-items: center; font-family: monospace; font-size: 14px; font-weight: 700; color: {{ textMuted }}; border: 1px dashed {{ border }}; padding: 0 16px; border-radius: 6px;">{{ client.name }}</div>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+
+      <section class="nwr-section-x" style="background: #fff; border-top: 1px solid {{ border }}; border-bottom: 1px solid {{ border }}; padding: 72px 48px; margin-top: 40px;">
+        <div style="max-width: 1200px; margin: 0 auto;">
+          <h2 style="font-size: 28px; color: {{ navy900 }}; margin: 0 0 40px; text-align: center;">Ce que nous faisons</h2>
+          <div class="nwr-grid-3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px;">
+            <div style="border: 1px solid {{ border }}; border-radius: 10px; padding: 28px;">
+              <div style="width: 40px; height: 40px; border-radius: 8px; background: #e5eefa; color: {{ navy700 }}; display: flex; align-items: center; justify-content: center; font-weight: 700; margin-bottom: 16px;">D</div>
+              <h3 style="font-size: 18px; margin: 0 0 8px; color: {{ navy900 }};">Digital Operations</h3>
+              <p style="font-size: 14px; line-height: 1.6; color: {{ textMuted }}; margin: 0;">Optimisation et automatisation de vos processus opérationnels au quotidien.</p>
+            </div>
+            <div style="border: 1px solid {{ border }}; border-radius: 10px; padding: 28px;">
+              <div style="width: 40px; height: 40px; border-radius: 8px; background: #fbeed9; color: #8a5a12; display: flex; align-items: center; justify-content: center; font-weight: 700; margin-bottom: 16px;">A</div>
+              <h3 style="font-size: 18px; margin: 0 0 8px; color: {{ navy900 }};">Application &amp; Logiciels</h3>
+              <p style="font-size: 14px; line-height: 1.6; color: {{ textMuted }}; margin: 0;">Développement et intégration d'outils métier adaptés à vos besoins.</p>
+            </div>
+            <div style="border: 1px solid {{ border }}; border-radius: 10px; padding: 28px;">
+              <div style="width: 40px; height: 40px; border-radius: 8px; background: #e4f5ec; color: {{ success }}; display: flex; align-items: center; justify-content: center; font-weight: 700; margin-bottom: 16px;">B</div>
+              <h3 style="font-size: 18px; margin: 0 0 8px; color: {{ navy900 }};">Business Management</h3>
+              <p style="font-size: 14px; line-height: 1.6; color: {{ textMuted }}; margin: 0;">Pilotage de votre activité : devis, facturation et suivi client centralisés.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="nwr-section-x" style="max-width: 1200px; margin: 0 auto; padding: 72px 48px;">
+        <h2 style="font-size: 28px; color: {{ navy900 }}; margin: 0 0 40px; text-align: center;">Votre espace client, tout-en-un</h2>
+        <div class="nwr-grid-3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
+          <div style="text-align: center; padding: 8px;">
+            <div style="font-size: 15px; font-weight: 700; color: {{ navy900 }}; margin-bottom: 8px;">Devis en ligne</div>
+            <p style="font-size: 13px; color: {{ textMuted }}; line-height: 1.5; margin: 0;">Demandez un devis et validez-le en un clic.</p>
+          </div>
+          <div style="text-align: center; padding: 8px;">
+            <div style="font-size: 15px; font-weight: 700; color: {{ navy900 }}; margin-bottom: 8px;">Facturation claire</div>
+            <p style="font-size: 13px; color: {{ textMuted }}; line-height: 1.5; margin: 0;">Suivez vos factures et réglez-les en ligne.</p>
+          </div>
+          <div style="text-align: center; padding: 8px;">
+            <div style="font-size: 15px; font-weight: 700; color: {{ navy900 }}; margin-bottom: 8px;">Support dédié</div>
+            <p style="font-size: 13px; color: {{ textMuted }}; line-height: 1.5; margin: 0;">Ouvrez un ticket et échangez directement avec notre équipe.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="nwr-section-x" style="background: {{ navy900 }}; padding: 56px 48px; text-align: center;">
+        <h2 style="color: #fff; font-size: 26px; margin: 0 0 20px;">Prêt à simplifier votre gestion ?</h2>
+        <button class="nwr-btn" onClick="{{ goRegister }}" style="background: {{ accent }}; color: {{ navy900 }}; border: none; padding: 14px 28px; border-radius: 6px; font-size: 15px; font-weight: 700;">Créer un compte gratuitement</button>
+      </section>
+    </main>
+
+    <footer class="nwr-footer-bar" style="border-top: 1px solid {{ border }}; padding: 32px 48px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: {{ textMuted }};">
+      <div>© NEWWOR Consulting 2026</div>
+      <div class="nwr-footer-links" style="display: flex; gap: 24px;">
+        <a href="#" onClick="{{ goContact }}" style="color: {{ textMuted }}; text-decoration: none;">Contact</a>
+        <a href="#" onClick="{{ goPrivacy }}" style="color: {{ textMuted }}; text-decoration: none;">Politique de confidentialité</a>
+        <a href="#" onClick="{{ openCookieSettings }}" style="color: {{ textMuted }}; text-decoration: none;">Gérer mes cookies</a>
+        <span>to@123.newwor.consulting</span>
+      </div>
+    </footer>
+  </sc-if>
+
+  <sc-if value="{{ isContact }}" hint-placeholder-val="{{ false }}">
+    <main class="nwr-section-x" style="flex: 1; max-width: 1000px; margin: 0 auto; padding: 72px 48px; width: 100%; box-sizing: border-box;">
+      <h1 style="font-size: 32px; color: {{ navy900 }}; margin: 0 0 8px;">Contactez-nous</h1>
+      <p style="font-size: 15px; color: {{ textMuted }}; margin: 0 0 40px;">Une question, un projet ? Notre équipe vous répond sous 24h.</p>
+      <div class="nwr-grid-2" style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 40px;">
+        <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 32px;">
+          <sc-if value="{{ contactSent }}" hint-placeholder-val="{{ false }}">
+            <div style="background: #e4f5ec; color: {{ success }}; padding: 16px 18px; border-radius: 8px; font-size: 14px;">Merci, votre message a bien été envoyé. Nous revenons vers vous rapidement.</div>
+          </sc-if>
+          <sc-if value="{{ contactNotSent }}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; flex-direction: column; gap: 18px;">
+              <div>
+                <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Nom complet</label>
+                <input value="{{ contactForm.name }}" onChange="{{ setContactName }}" placeholder="Jean Dupont" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
+              </div>
+              <div>
+                <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Email</label>
+                <input value="{{ contactForm.email }}" onChange="{{ setContactEmail }}" placeholder="jean@entreprise.fr" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
+              </div>
+              <div>
+                <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Sujet</label>
+                <input value="{{ contactForm.subject }}" onChange="{{ setContactSubject }}" placeholder="Demande d'information" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
+              </div>
+              <div>
+                <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Message</label>
+                <textarea value="{{ contactForm.message }}" onChange="{{ setContactMessage }}" placeholder="Votre message..." rows="5" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
+              </div>
+              <button class="nwr-btn" onClick="{{ submitContact }}" style="align-self: flex-start; background: {{ navy900 }}; color: #fff; border: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600;">Envoyer</button>
+            </div>
+          </sc-if>
+        </div>
+        <div style="background: {{ navy900 }}; color: #fff; border-radius: 10px; padding: 32px; height: fit-content;">
+          <div style="font-size: 13px; opacity: 0.7; margin-bottom: 4px;">Email</div>
+          <div style="font-size: 15px; margin-bottom: 20px;">to@123.newwor.consulting</div>
+          <div style="font-size: 13px; opacity: 0.7; margin-bottom: 4px;">Adresse</div>
+          <div style="font-size: 15px; margin-bottom: 20px;">12 rue des Consultants, 75008 Paris</div>
+          <div style="font-size: 13px; opacity: 0.7; margin-bottom: 4px;">Horaires</div>
+          <div style="font-size: 15px;">Lun–Ven, 9h–18h</div>
+        </div>
+      </div>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{ isPrivacy }}" hint-placeholder-val="{{ false }}">
+    <main class="nwr-section-x" style="flex: 1; max-width: 800px; margin: 0 auto; padding: 72px 48px; width: 100%; box-sizing: border-box;">
+      <h1 style="font-size: 30px; color: {{ navy900 }}; margin: 0 0 8px;">Politique de confidentialité</h1>
+      <p style="font-size: 14px; color: {{ textMuted }}; margin: 0 0 32px;">Dernière mise à jour : juillet 2026</p>
+      <div style="font-size: 15px; line-height: 1.7; color: {{ textDark }};">
+        <h3 style="color: {{ navy900 }}; font-size: 17px;">Cookies essentiels</h3>
+        <p style="color: {{ textMuted }};">Ces cookies sont indispensables au fonctionnement du site (authentification, sécurité, mémorisation de vos préférences) et ne peuvent pas être désactivés.</p>
+        <h3 style="color: {{ navy900 }}; font-size: 17px;">Cookies statistiques</h3>
+        <p style="color: {{ textMuted }};">Utilisés pour mesurer l'audience du site de façon anonymisée, afin d'en améliorer le contenu et l'ergonomie.</p>
+        <h3 style="color: {{ navy900 }}; font-size: 17px;">Cookies de personnalisation</h3>
+        <p style="color: {{ textMuted }};">Permettent d'adapter l'affichage du site à vos préférences de navigation.</p>
+        <h3 style="color: {{ navy900 }}; font-size: 17px;">Cookies marketing</h3>
+        <p style="color: {{ textMuted }};">Utilisés pour vous proposer des communications pertinentes de la part de NEWWOR Consulting.</p>
+        <p style="color: {{ textMuted }};">Vous pouvez à tout moment modifier vos préférences via le lien « Gérer mes cookies » présent en bas de chaque page.</p>
+      </div>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+    <main class="nwr-center-main" style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 48px;">
+      <div class="nwr-card-400" style="width: 400px; background: #fff; border: 1px solid {{ border }}; border-radius: 12px; padding: 40px; box-shadow: 0 12px 32px rgba(13,35,64,0.06);">
+        <div style="display: flex; gap: 4px; background: {{ bg }}; border-radius: 8px; padding: 4px; margin-bottom: 28px;">
+          <button class="nwr-btn" onClick="{{ setModeLogin }}" style="flex: 1; padding: 10px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; background: {{ loginTabBg }}; color: {{ loginTabColor }};">Se connecter</button>
+          <button class="nwr-btn" onClick="{{ setModeRegister }}" style="flex: 1; padding: 10px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; background: {{ registerTabBg }}; color: {{ registerTabColor }};">Créer un compte</button>
+        </div>
+        <sc-if value="{{ hasAuthNotice }}" hint-placeholder-val="{{ false }}">
+          <div style="background: #e4f5ec; color: {{ success }}; padding: 12px 14px; border-radius: 6px; font-size: 13px; line-height: 1.4; margin-bottom: 16px;">{{ authNotice }}</div>
+        </sc-if>
+        <sc-if value="{{ hasAuthError }}" hint-placeholder-val="{{ false }}">
+          <div style="background: #fbe6e4; color: {{ danger }}; padding: 12px 14px; border-radius: 6px; font-size: 13px; line-height: 1.4; margin-bottom: 16px;">{{ authError }}</div>
+        </sc-if>
+        <sc-if value="{{ isRegisterMode }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-bottom: 16px;">
+            <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Société</label>
+            <input value="{{ registerCompany }}" onChange="{{ setRegisterCompany }}" placeholder="Ma Société SARL" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
+          </div>
+          <div style="margin-bottom: 16px;">
+            <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Nom du contact</label>
+            <input value="{{ registerContactName }}" onChange="{{ setRegisterContactName }}" placeholder="Claire Dubois" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
+          </div>
+        </sc-if>
+        <div style="margin-bottom: 16px;">
+          <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Email</label>
+          <input value="{{ loginEmail }}" onChange="{{ setLoginEmail }}" placeholder="vous@entreprise.fr" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
+        </div>
+        <div style="margin-bottom: 24px;">
+          <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Mot de passe</label>
+          <input type="password" value="{{ loginPassword }}" onChange="{{ setLoginPassword }}" placeholder="••••••••" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
+        </div>
+        <button class="nwr-btn" onClick="{{ login }}" style="width: 100%; background: {{ navy900 }}; color: #fff; border: none; padding: 13px; border-radius: 6px; font-size: 15px; font-weight: 600; margin-bottom: 12px;">{{ loginButtonLabel }}</button>
+        <div style="text-align: center; font-size: 13px; color: {{ textMuted }};">Mot de passe perdu ?</div>
+      </div>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{ isApp }}" hint-placeholder-val="{{ false }}">
+    <div class="nwr-app-shell" style="flex: 1; display: flex; min-height: 100vh;">
+      <aside class="nwr-sidebar" style="width: 240px; background: {{ navy900 }}; color: #fff; display: flex; flex-direction: column; padding: 24px 16px; box-sizing: border-box; position: sticky; top: 0; height: 100vh;">
+        <div class="nwr-sidebar-bar">
+          <div style="display: flex; align-items: center; padding: 0 8px 24px; cursor: pointer;" onClick="{{ goHome }}">
+            <div style="background: #fff; border-radius: 7px; padding: 8px 12px;">
+              <img src="assets/newwor-logo-gold.png" alt="NEWWOR Consulting" style="height: 26px; width: auto; display: block;">
+            </div>
+          </div>
+          <button id="nwr-hamburger-btn" type="button" aria-label="Ouvrir le menu" aria-expanded="false">
+            <span></span><span></span><span></span>
+          </button>
+        </div>
+        <nav class="nwr-sidebar-nav" style="display: flex; flex-direction: column; gap: 2px;">
+          <sc-if value="{{ isClient }}" hint-placeholder-val="{{ true }}">
+            <a href="#" onClick="{{ goDashboard }}" style="text-decoration: none; color: {{ navDashColor }}; background: {{ navDashBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Tableau de bord</a>
+            <a href="#" onClick="{{ goQuotes }}" style="text-decoration: none; color: {{ navQuotesColor }}; background: {{ navQuotesBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Devis</a>
+            <a href="#" onClick="{{ goInvoices }}" style="text-decoration: none; color: {{ navInvoicesColor }}; background: {{ navInvoicesBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Factures</a>
+            <a href="#" onClick="{{ goTickets }}" style="text-decoration: none; color: {{ navTicketsColor }}; background: {{ navTicketsBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Tickets</a>
+            <a href="#" onClick="{{ goMilestones }}" style="text-decoration: none; color: {{ navMilestonesColor }}; background: {{ navMilestonesBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Suivi de projet</a>
+            <a href="#" onClick="{{ goProfile }}" style="text-decoration: none; color: {{ navProfileColor }}; background: {{ navProfileBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Profil</a>
+          </sc-if>
+          <sc-if value="{{ isStaff }}" hint-placeholder-val="{{ false }}">
+            <a href="#" onClick="{{ goStaffClients }}" style="text-decoration: none; color: {{ navStaffClientsColor }}; background: {{ navStaffClientsBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Clients</a>
+          </sc-if>
+        </nav>
+        <div class="nwr-sidebar-foot" style="margin-top: auto; border-top: 1px solid #ffffff22; padding-top: 16px;">
+          <div style="font-size: 13px; font-weight: 600;">{{ userName }}</div>
+          <div style="font-size: 12px; opacity: 0.6; margin-bottom: 12px;">{{ company }}</div>
+          <a href="#" onClick="{{ logout }}" style="text-decoration: none; font-size: 13px; opacity: 0.75; color: #fff;">Se déconnecter</a>
+        </div>
+      </aside>
+
+      <main class="nwr-app-content" style="flex: 1; padding: 40px 48px; box-sizing: border-box; overflow: auto;">
+
+        <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ false }}">
+          <h1 style="font-size: 26px; color: {{ navy900 }}; margin: 0 0 4px;">Bonjour, {{ firstName }}</h1>
+          <p style="font-size: 14px; color: {{ textMuted }}; margin: 0 0 32px;">Voici un aperçu de votre compte.</p>
+          <div class="nwr-grid-3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 36px;">
+            <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 22px;">
+              <div style="font-size: 13px; color: {{ textMuted }}; margin-bottom: 8px;">Devis en attente</div>
+              <div style="font-size: 28px; font-weight: 700; color: {{ navy900 }};">{{ pendingQuotesCount }}</div>
+            </div>
+            <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 22px;">
+              <div style="font-size: 13px; color: {{ textMuted }}; margin-bottom: 8px;">Factures impayées</div>
+              <div style="font-size: 28px; font-weight: 700; color: {{ navy900 }};">{{ unpaidInvoicesTotal }} €</div>
+            </div>
+            <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 22px;">
+              <div style="font-size: 13px; color: {{ textMuted }}; margin-bottom: 8px;">Tickets ouverts</div>
+              <div style="font-size: 28px; font-weight: 700; color: {{ navy900 }};">{{ openTicketsCount }}</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px; margin-bottom: 36px;">
+            <button class="nwr-btn" onClick="{{ openNewTicketModal }}" style="background: {{ navy900 }}; color: #fff; border: none; padding: 11px 20px; border-radius: 6px; font-size: 14px; font-weight: 600;">+ Nouveau ticket</button>
+            <button class="nwr-btn" onClick="{{ goInvoices }}" style="background: #fff; color: {{ navy900 }}; border: 1px solid {{ border }}; padding: 11px 20px; border-radius: 6px; font-size: 14px; font-weight: 600;">Voir les factures</button>
+          </div>
+          <h2 style="font-size: 17px; color: {{ navy900 }}; margin: 0 0 14px;">Activité récente</h2>
+          <div class="nwr-table-wrap" style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; overflow: hidden;">
+            <sc-for list="{{ recentActivity }}" as="act" hint-placeholder-count="4">
+              <div class="nwr-row" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid {{ border }};">
+                <div>
+                  <div style="font-size: 14px; font-weight: 600; color: {{ navy900 }};">{{ act.label }}</div>
+                  <div style="font-size: 12px; color: {{ textMuted }};">{{ act.date }}</div>
+                </div>
+                <span style="font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 100px; background: {{ act.badgeBg }}; color: {{ act.badgeColor }};">{{ act.badgeLabel }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isQuotesList }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h1 style="font-size: 26px; color: {{ navy900 }}; margin: 0;">Devis</h1>
+            <button class="nwr-btn" onClick="{{ openNewQuoteModal }}" style="background: {{ navy900 }}; color: #fff; border: none; padding: 11px 20px; border-radius: 6px; font-size: 14px; font-weight: 600;">+ Demander un devis</button>
+          </div>
+          <div class="nwr-table-wrap" style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; overflow: hidden;">
+            <div class="nwr-table-row" style="display: grid; grid-template-columns: 1fr 2fr 1fr 1fr 100px; padding: 14px 20px; font-size: 12px; font-weight: 700; color: {{ textMuted }}; border-bottom: 1px solid {{ border }}; text-transform: uppercase; letter-spacing: 0.03em;">
+              <div>Référence</div><div>Objet</div><div>Date</div><div>Montant</div><div>Statut</div>
+            </div>
+            <sc-for list="{{ quotesView }}" as="q" hint-placeholder-count="3">
+              <div class="nwr-row nwr-table-row" onClick="{{ q.select }}" style="display: grid; grid-template-columns: 1fr 2fr 1fr 1fr 100px; padding: 16px 20px; border-bottom: 1px solid {{ border }}; align-items: center; cursor: pointer; font-size: 14px;">
+                <div style="font-weight: 600; color: {{ navy900 }};">{{ q.ref }}</div>
+                <div>{{ q.subject }}</div>
+                <div style="color: {{ textMuted }};">{{ q.date }}</div>
+                <div>{{ q.amount }}</div>
+                <span style="font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 100px; background: {{ q.badgeBg }}; color: {{ q.badgeColor }}; justify-self: start;">{{ q.badgeLabel }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isQuoteDetail }}" hint-placeholder-val="{{ false }}">
+          <a href="#" onClick="{{ goQuotes }}" style="text-decoration: none; color: {{ textMuted }}; font-size: 13px; display: inline-block; margin-bottom: 16px;">← Retour aux devis</a>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px;">
+            <div>
+              <h1 style="font-size: 24px; color: {{ navy900 }}; margin: 0 0 6px;">{{ currentQuote.subject }}</h1>
+              <div style="font-size: 13px; color: {{ textMuted }};">{{ currentQuote.ref }} · {{ currentQuote.date }}</div>
+            </div>
+            <span style="font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 100px; background: {{ currentQuote.badgeBg }}; color: {{ currentQuote.badgeColor }};">{{ currentQuote.badgeLabel }}</span>
+          </div>
+          <sc-if value="{{ currentQuote.isRequested }}" hint-placeholder-val="{{ false }}">
+            <div style="background: #e5eefa; color: {{ navy700 }}; padding: 20px; border-radius: 10px; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">Votre demande a bien été transmise à notre équipe. Nous revenons vers vous avec un devis chiffré sous 48h.</div>
+          </sc-if>
+          <sc-if value="{{ currentQuote.showLines }}" hint-placeholder-val="{{ false }}">
+            <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 28px; margin-bottom: 20px;">
+              <sc-for list="{{ currentQuote.lines }}" as="line" hint-placeholder-count="2">
+                <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid {{ border }}; font-size: 14px;">
+                  <div>{{ line.desc }} <span style="color: {{ textMuted }};">× {{ line.qty }}</span></div>
+                  <div>{{ line.lineTotal }} €</div>
+                </div>
+              </sc-for>
+              <div style="display: flex; justify-content: space-between; padding-top: 16px; font-size: 16px; font-weight: 700; color: {{ navy900 }};">
+                <div>Total</div><div>{{ currentQuote.amount }} €</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <sc-if value="{{ currentQuote.isPending }}" hint-placeholder-val="{{ false }}">
+                <button class="nwr-btn" onClick="{{ acceptCurrentQuote }}" style="background: {{ success }}; color: #fff; border: none; padding: 12px 22px; border-radius: 6px; font-size: 14px; font-weight: 600;">Accepter le devis</button>
+                <button class="nwr-btn" onClick="{{ refuseCurrentQuote }}" style="background: #fff; color: {{ danger }}; border: 1px solid {{ border }}; padding: 12px 22px; border-radius: 6px; font-size: 14px; font-weight: 600;">Refuser</button>
+              </sc-if>
+              <button class="nwr-btn" onClick="{{ downloadQuotePdf }}" style="background: #fff; color: {{ navy900 }}; border: 1px solid {{ border }}; padding: 12px 22px; border-radius: 6px; font-size: 14px; font-weight: 600;">Télécharger le PDF</button>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ isInvoicesList }}" hint-placeholder-val="{{ false }}">
+          <h1 style="font-size: 26px; color: {{ navy900 }}; margin: 0 0 24px;">Factures</h1>
+          <div class="nwr-table-wrap" style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; overflow: hidden;">
+            <div class="nwr-table-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 100px; padding: 14px 20px; font-size: 12px; font-weight: 700; color: {{ textMuted }}; border-bottom: 1px solid {{ border }}; text-transform: uppercase; letter-spacing: 0.03em;">
+              <div>Référence</div><div>Échéance</div><div>Montant</div><div></div><div>Statut</div>
+            </div>
+            <sc-for list="{{ invoicesView }}" as="inv" hint-placeholder-count="4">
+              <div class="nwr-row nwr-table-row" onClick="{{ inv.select }}" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 100px; padding: 16px 20px; border-bottom: 1px solid {{ border }}; align-items: center; cursor: pointer; font-size: 14px;">
+                <div style="font-weight: 600; color: {{ navy900 }};">{{ inv.ref }}</div>
+                <div style="color: {{ textMuted }};">{{ inv.dueDate }}</div>
+                <div>{{ inv.amount }} €</div>
+                <div></div>
+                <span style="font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 100px; background: {{ inv.badgeBg }}; color: {{ inv.badgeColor }}; justify-self: start;">{{ inv.badgeLabel }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isInvoiceDetail }}" hint-placeholder-val="{{ false }}">
+          <a href="#" onClick="{{ goInvoices }}" style="text-decoration: none; color: {{ textMuted }}; font-size: 13px; display: inline-block; margin-bottom: 16px;">← Retour aux factures</a>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px;">
+            <div>
+              <h1 style="font-size: 24px; color: {{ navy900 }}; margin: 0 0 6px;">Facture {{ currentInvoice.ref }}</h1>
+              <div style="font-size: 13px; color: {{ textMuted }};">Échéance {{ currentInvoice.dueDate }}</div>
+            </div>
+            <span style="font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 100px; background: {{ currentInvoice.badgeBg }}; color: {{ currentInvoice.badgeColor }};">{{ currentInvoice.badgeLabel }}</span>
+          </div>
+          <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 28px; margin-bottom: 20px;">
+            <sc-for list="{{ currentInvoice.lines }}" as="line" hint-placeholder-count="2">
+              <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid {{ border }}; font-size: 14px;">
+                <div>{{ line.desc }} <span style="color: {{ textMuted }};">× {{ line.qty }}</span></div>
+                <div>{{ line.lineTotal }} €</div>
+              </div>
+            </sc-for>
+            <div style="display: flex; justify-content: space-between; padding-top: 16px; font-size: 16px; font-weight: 700; color: {{ navy900 }};">
+              <div>Total</div><div>{{ currentInvoice.amount }} €</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <sc-if value="{{ currentInvoice.isUnpaid }}" hint-placeholder-val="{{ false }}">
+              <button class="nwr-btn" onClick="{{ payCurrentInvoice }}" style="background: {{ success }}; color: #fff; border: none; padding: 12px 22px; border-radius: 6px; font-size: 14px; font-weight: 600;">Payer maintenant</button>
+            </sc-if>
+            <button class="nwr-btn" onClick="{{ downloadInvoicePdf }}" style="background: #fff; color: {{ navy900 }}; border: 1px solid {{ border }}; padding: 12px 22px; border-radius: 6px; font-size: 14px; font-weight: 600;">Télécharger le PDF</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isTicketsList }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1 style="font-size: 26px; color: {{ navy900 }}; margin: 0;">Tickets</h1>
+            <button class="nwr-btn" onClick="{{ openNewTicketModal }}" style="background: {{ navy900 }}; color: #fff; border: none; padding: 11px 20px; border-radius: 6px; font-size: 14px; font-weight: 600;">+ Nouveau ticket</button>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: center;">
+            <input value="{{ ticketSearch }}" onChange="{{ setTicketSearch }}" placeholder="Rechercher par référence ou sujet…" style="flex: 1; min-width: 220px; border: 1px solid {{ border }}; border-radius: 6px; padding: 10px 14px; font-size: 14px; font-family: inherit;">
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="nwr-btn" type="button" onClick="{{ setFilterAll }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ filterAllBg }}; color: {{ filterAllColor }};">Tous</button>
+              <button class="nwr-btn" type="button" onClick="{{ setFilterOpen }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ filterOpenBg }}; color: {{ filterOpenColor }};">Ouvert</button>
+              <button class="nwr-btn" type="button" onClick="{{ setFilterInProgress }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ filterInProgressBg }}; color: {{ filterInProgressColor }};">En cours</button>
+              <button class="nwr-btn" type="button" onClick="{{ setFilterResolved }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ filterResolvedBg }}; color: {{ filterResolvedColor }};">Résolu</button>
+            </div>
+          </div>
+          <div class="nwr-table-wrap" style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; overflow: hidden;">
+            <div class="nwr-table-row" style="display: grid; grid-template-columns: 1fr 2.5fr 1fr 120px; padding: 14px 20px; font-size: 12px; font-weight: 700; color: {{ textMuted }}; border-bottom: 1px solid {{ border }}; text-transform: uppercase; letter-spacing: 0.03em;">
+              <div>Référence</div><div>Sujet</div><div>Mis à jour</div><div>Statut</div>
+            </div>
+            <sc-for list="{{ ticketsViewFiltered }}" as="t" hint-placeholder-count="3">
+              <div class="nwr-row nwr-table-row" onClick="{{ t.select }}" style="display: grid; grid-template-columns: 1fr 2.5fr 1fr 120px; padding: 16px 20px; border-bottom: 1px solid {{ border }}; align-items: center; cursor: pointer; font-size: 14px;">
+                <div style="font-weight: 600; color: {{ navy900 }};">{{ t.ref }}</div>
+                <div>{{ t.subject }}</div>
+                <div style="color: {{ textMuted }};">{{ t.updated }}</div>
+                <span style="font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 100px; background: {{ t.badgeBg }}; color: {{ t.badgeColor }}; justify-self: start;">{{ t.badgeLabel }}</span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ noTicketsMatch }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 32px 20px; text-align: center; font-size: 14px; color: {{ textMuted }};">Aucun ticket ne correspond à cette recherche.</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isTicketDetail }}" hint-placeholder-val="{{ false }}">
+          <a href="#" onClick="{{ backFromTicket }}" style="text-decoration: none; color: {{ textMuted }}; font-size: 13px; display: inline-block; margin-bottom: 16px;">← Retour aux tickets</a>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+            <div>
+              <h1 style="font-size: 22px; color: {{ navy900 }}; margin: 0 0 6px;">{{ currentTicket.subject }}</h1>
+              <div style="font-size: 13px; color: {{ textMuted }};">{{ currentTicket.ref }} · Priorité {{ currentTicket.priority }} · {{ currentTicket.slaText }}</div>
+            </div>
+            <span style="font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 100px; background: {{ currentTicket.badgeBg }}; color: {{ currentTicket.badgeColor }};">{{ currentTicket.badgeLabel }}</span>
+          </div>
+          <sc-if value="{{ isStaff }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px;">
+              <button class="nwr-btn" type="button" onClick="{{ setTicketStatusOpen }}" style="padding: 7px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ currentTicket.statusOpenBg }}; color: {{ currentTicket.statusOpenColor }};">Ouvert</button>
+              <button class="nwr-btn" type="button" onClick="{{ setTicketStatusInProgress }}" style="padding: 7px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ currentTicket.statusInProgressBg }}; color: {{ currentTicket.statusInProgressColor }};">En cours</button>
+              <button class="nwr-btn" type="button" onClick="{{ setTicketStatusWaiting }}" style="padding: 7px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ currentTicket.statusWaitingBg }}; color: {{ currentTicket.statusWaitingColor }};">En attente client</button>
+              <button class="nwr-btn" type="button" onClick="{{ setTicketStatusResolved }}" style="padding: 7px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ currentTicket.statusResolvedBg }}; color: {{ currentTicket.statusResolvedColor }};">Résolu</button>
+              <button class="nwr-btn" type="button" onClick="{{ setTicketStatusClosed }}" style="padding: 7px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ currentTicket.statusClosedBg }}; color: {{ currentTicket.statusClosedColor }};">Fermé</button>
+            </div>
+          </sc-if>
+          <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 24px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 14px;">
+            <sc-for list="{{ currentTicket.messages }}" as="msg" hint-placeholder-count="2">
+              <div style="align-self: {{ msg.align }}; max-width: 70%;">
+                <div style="background: {{ msg.bg }}; color: {{ msg.color }}; padding: 12px 16px; border-radius: 10px; font-size: 14px; line-height: 1.5;">{{ msg.text }}</div>
+                <sc-if value="{{ msg.hasAttachment }}" hint-placeholder-val="{{ false }}">
+                  <div style="text-align: {{ msg.textAlign }}; margin-top: 4px;"><a href="{{ msg.attachmentUrl }}" target="_blank" rel="noopener" style="font-size: 12px; color: {{ navy700 }};">📎 {{ msg.attachmentName }}</a></div>
+                </sc-if>
+                <div style="font-size: 11px; color: {{ textMuted }}; margin-top: 4px; text-align: {{ msg.textAlign }};">{{ msg.who }} · {{ msg.date }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ currentTicket.canReply }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <input value="{{ replyDraft }}" onChange="{{ setReplyDraft }}" placeholder="Écrire une réponse..." style="flex: 1; min-width: 160px; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
+              <input type="file" onChange="{{ setReplyFile }}" style="border: 1px solid {{ border }}; border-radius: 6px; padding: 10px; font-size: 12px; font-family: inherit; max-width: 160px;">
+              <button class="nwr-btn" onClick="{{ sendReply }}" style="background: {{ navy900 }}; color: #fff; border: none; padding: 12px 20px; border-radius: 6px; font-size: 14px; font-weight: 600;">Envoyer</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ currentTicket.showSatisfaction }}" hint-placeholder-val="{{ false }}">
+            <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 20px 24px; margin-top: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+              <div style="font-size: 14px; font-weight: 600; color: {{ navy900 }};">Ce ticket est {{ currentTicket.badgeLabel }} — comment évaluez-vous notre réponse ?</div>
+              <div style="display: flex; gap: 6px;">
+                <button class="nwr-btn" type="button" onClick="{{ rate1 }}" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid {{ border }}; background: {{ rateBg1 }}; font-size: 14px; font-weight: 700; color: {{ navy900 }};">1</button>
+                <button class="nwr-btn" type="button" onClick="{{ rate2 }}" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid {{ border }}; background: {{ rateBg2 }}; font-size: 14px; font-weight: 700; color: {{ navy900 }};">2</button>
+                <button class="nwr-btn" type="button" onClick="{{ rate3 }}" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid {{ border }}; background: {{ rateBg3 }}; font-size: 14px; font-weight: 700; color: {{ navy900 }};">3</button>
+                <button class="nwr-btn" type="button" onClick="{{ rate4 }}" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid {{ border }}; background: {{ rateBg4 }}; font-size: 14px; font-weight: 700; color: {{ navy900 }};">4</button>
+                <button class="nwr-btn" type="button" onClick="{{ rate5 }}" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid {{ border }}; background: {{ rateBg5 }}; font-size: 14px; font-weight: 700; color: {{ navy900 }};">5</button>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ currentTicket.hasSatisfaction }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size: 13px; color: {{ textMuted }}; margin-top: 16px;">Merci, vous avez noté ce ticket {{ currentTicket.satisfaction }}/5.</div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ isMilestones }}" hint-placeholder-val="{{ false }}">
+          <h1 style="font-size: 26px; color: {{ navy900 }}; margin: 0 0 6px;">Suivi de projet</h1>
+
+          <sc-if value="{{ isDirectClient }}" hint-placeholder-val="{{ true }}">
+            <p style="font-size: 14px; color: {{ textMuted }}; margin: 0 0 20px;">L'avancement de vos projets et interventions, mis à jour par notre équipe.</p>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px;">
+              <button class="nwr-btn" type="button" onClick="{{ setMFilterAll }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ mFilterAllBg }}; color: {{ mFilterAllColor }};">Tous</button>
+              <button class="nwr-btn" type="button" onClick="{{ setMFilterTodo }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ mFilterTodoBg }}; color: {{ mFilterTodoColor }};">À faire</button>
+              <button class="nwr-btn" type="button" onClick="{{ setMFilterInProgress }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ mFilterInProgressBg }}; color: {{ mFilterInProgressColor }};">En cours</button>
+              <button class="nwr-btn" type="button" onClick="{{ setMFilterDone }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ mFilterDoneBg }}; color: {{ mFilterDoneColor }};">Livré</button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <sc-for list="{{ milestonesViewFiltered }}" as="m" hint-placeholder-count="3">
+                <div style="background: #fff; border: 1px solid {{ border }}; border-left: 4px solid {{ m.badgeColor }}; border-radius: 10px; padding: 18px 22px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                  <div style="flex: 1; min-width: 200px;">
+                    <div style="font-size: 15px; font-weight: 700; color: {{ navy900 }}; margin-bottom: 4px;">{{ m.title }}</div>
+                    <div style="font-size: 13px; color: {{ textMuted }}; line-height: 1.5;">{{ m.description }}</div>
+                    <div style="font-size: 12px; color: {{ textMuted }}; margin-top: 8px;">{{ m.dueLabel }}</div>
+                  </div>
+                  <span style="font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 100px; background: {{ m.badgeBg }}; color: {{ m.badgeColor }}; white-space: nowrap;">{{ m.badgeLabel }}</span>
+                </div>
+              </sc-for>
+              <sc-if value="{{ noMilestones }}" hint-placeholder-val="{{ false }}">
+                <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 32px; text-align: center; font-size: 14px; color: {{ textMuted }};">Aucune étape de projet pour le moment — nous ajouterons les jalons de votre projet ici au fur et à mesure de son avancement.</div>
+              </sc-if>
+              <sc-if value="{{ noMilestonesMatch }}" hint-placeholder-val="{{ false }}">
+                <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 32px; text-align: center; font-size: 14px; color: {{ textMuted }};">Aucune étape ne correspond à ce filtre.</div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isServiceClient }}" hint-placeholder-val="{{ false }}">
+            <p style="font-size: 14px; color: {{ textMuted }}; margin: 0 0 20px;">Résumé de l'avancement de votre projet — le détail est géré par notre équipe et votre prestataire.</p>
+            <div class="nwr-grid-4" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
+              <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 18px; text-align: center;">
+                <div style="font-size: 24px; font-weight: 700; color: {{ navy900 }};">{{ milestonesSummary.countTodo }}</div>
+                <div style="font-size: 12px; color: {{ textMuted }}; margin-top: 4px;">À faire</div>
+              </div>
+              <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 18px; text-align: center;">
+                <div style="font-size: 24px; font-weight: 700; color: {{ navy900 }};">{{ milestonesSummary.countInProgress }}</div>
+                <div style="font-size: 12px; color: {{ textMuted }}; margin-top: 4px;">En cours</div>
+              </div>
+              <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 18px; text-align: center;">
+                <div style="font-size: 24px; font-weight: 700; color: {{ navy900 }};">{{ milestonesSummary.countValidation }}</div>
+                <div style="font-size: 12px; color: {{ textMuted }}; margin-top: 4px;">En validation</div>
+              </div>
+              <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 18px; text-align: center;">
+                <div style="font-size: 24px; font-weight: 700; color: {{ navy900 }};">{{ milestonesSummary.countDone }}</div>
+                <div style="font-size: 12px; color: {{ textMuted }}; margin-top: 4px;">Livré</div>
+              </div>
+            </div>
+            <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 20px 22px;">
+              <div style="font-size: 13px; font-weight: 600; color: {{ textMuted }}; margin-bottom: 4px;">Sur {{ milestonesSummary.total }} étape(s) au total</div>
+              <div style="font-size: 15px; font-weight: 700; color: {{ navy900 }};">{{ milestonesSummary.nextDueLabel }}</div>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ isStaffClients }}" hint-placeholder-val="{{ false }}">
+          <h1 style="font-size: 26px; color: {{ navy900 }}; margin: 0 0 6px;">Clients</h1>
+          <p style="font-size: 14px; color: {{ textMuted }}; margin: 0 0 20px;">Sélectionnez un client pour gérer ses tickets, son suivi de projet et son type d'accès.</p>
+          <div class="nwr-table-wrap" style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; overflow: hidden;">
+            <div class="nwr-table-row" style="display: grid; grid-template-columns: 1.6fr 1.2fr 1.8fr 160px; padding: 14px 20px; font-size: 12px; font-weight: 700; color: {{ textMuted }}; border-bottom: 1px solid {{ border }}; text-transform: uppercase; letter-spacing: 0.03em;">
+              <div>Société</div><div>Contact</div><div>Email</div><div>Type</div>
+            </div>
+            <sc-for list="{{ staffClientsView }}" as="c" hint-placeholder-count="3">
+              <div class="nwr-row nwr-table-row" onClick="{{ c.select }}" style="display: grid; grid-template-columns: 1.6fr 1.2fr 1.8fr 160px; padding: 16px 20px; border-bottom: 1px solid {{ border }}; align-items: center; cursor: pointer; font-size: 14px;">
+                <div style="font-weight: 600; color: {{ navy900 }};">{{ c.displayName }}</div>
+                <div style="color: {{ textMuted }};">{{ c.contact_name }}</div>
+                <div style="color: {{ textMuted }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ c.emailLabel }}</div>
+                <span style="font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 100px; background: {{ c.typeBg }}; color: {{ c.typeColor }}; justify-self: start;">{{ c.typeLabel }}</span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ noStaffClients }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 32px 20px; text-align: center; font-size: 14px; color: {{ textMuted }};">Aucun client pour le moment.</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isStaffClientDetail }}" hint-placeholder-val="{{ false }}">
+          <a href="#" onClick="{{ goStaffClients }}" style="text-decoration: none; color: {{ textMuted }}; font-size: 13px; display: inline-block; margin-bottom: 16px;">← Retour aux clients</a>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h1 style="font-size: 22px; color: {{ navy900 }}; margin: 0 0 6px;">{{ staffSelectedClientName }}</h1>
+              <div style="font-size: 13px; color: {{ textMuted }};">{{ staffSelectedClient.contact_name }}</div>
+              <div style="font-size: 13px; color: {{ textMuted }};">{{ staffSelectedClient.email }}</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+              <div style="display: flex; gap: 6px;">
+                <button class="nwr-btn" type="button" onClick="{{ setClientTypeDirect }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ typeChipDirectBg }}; color: {{ typeChipDirectColor }};">Direct</button>
+                <button class="nwr-btn" type="button" onClick="{{ setClientTypeService }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ typeChipServiceBg }}; color: {{ typeChipServiceColor }};">Prestataire (résumé)</button>
+              </div>
+              <sc-if value="{{ hasStaffReportEmail }}" hint-placeholder-val="{{ false }}">
+                <a href="{{ staffReportMailto }}" class="nwr-btn" style="text-decoration: none; display: inline-block; background: {{ navy900 }}; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;">Envoyer le rapport par email</a>
+              </sc-if>
+              <sc-if value="{{ noStaffReportEmail }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size: 12px; color: {{ textMuted }};">Email du client indisponible pour l'envoi du rapport.</span>
+              </sc-if>
+            </div>
+          </div>
+
+          <h2 style="font-size: 17px; color: {{ navy900 }}; margin: 0 0 14px;">Tickets</h2>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center;">
+            <input value="{{ ticketSearch }}" onChange="{{ setTicketSearch }}" placeholder="Rechercher par référence ou sujet…" style="flex: 1; min-width: 220px; border: 1px solid {{ border }}; border-radius: 6px; padding: 10px 14px; font-size: 14px; font-family: inherit;">
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="nwr-btn" type="button" onClick="{{ setFilterAll }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ filterAllBg }}; color: {{ filterAllColor }};">Tous</button>
+              <button class="nwr-btn" type="button" onClick="{{ setFilterOpen }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ filterOpenBg }}; color: {{ filterOpenColor }};">Ouvert</button>
+              <button class="nwr-btn" type="button" onClick="{{ setFilterInProgress }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ filterInProgressBg }}; color: {{ filterInProgressColor }};">En cours</button>
+              <button class="nwr-btn" type="button" onClick="{{ setFilterResolved }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ filterResolvedBg }}; color: {{ filterResolvedColor }};">Résolu</button>
+            </div>
+          </div>
+          <div class="nwr-table-wrap" style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; overflow: hidden; margin-bottom: 36px;">
+            <div class="nwr-table-row" style="display: grid; grid-template-columns: 1fr 2.5fr 1fr 120px; padding: 14px 20px; font-size: 12px; font-weight: 700; color: {{ textMuted }}; border-bottom: 1px solid {{ border }}; text-transform: uppercase; letter-spacing: 0.03em;">
+              <div>Référence</div><div>Sujet</div><div>Mis à jour</div><div>Statut</div>
+            </div>
+            <sc-for list="{{ ticketsViewFiltered }}" as="t" hint-placeholder-count="3">
+              <div class="nwr-row nwr-table-row" onClick="{{ t.select }}" style="display: grid; grid-template-columns: 1fr 2.5fr 1fr 120px; padding: 16px 20px; border-bottom: 1px solid {{ border }}; align-items: center; cursor: pointer; font-size: 14px;">
+                <div style="font-weight: 600; color: {{ navy900 }};">{{ t.ref }}</div>
+                <div>{{ t.subject }}</div>
+                <div style="color: {{ textMuted }};">{{ t.updated }}</div>
+                <span style="font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 100px; background: {{ t.badgeBg }}; color: {{ t.badgeColor }}; justify-self: start;">{{ t.badgeLabel }}</span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ noTicketsMatch }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 32px 20px; text-align: center; font-size: 14px; color: {{ textMuted }};">Aucun ticket ne correspond à cette recherche.</div>
+            </sc-if>
+          </div>
+
+          <h2 style="font-size: 17px; color: {{ navy900 }}; margin: 0 0 14px;">Suivi de projet</h2>
+          <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 20px 22px; margin-bottom: 16px;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+              <input value="{{ staffNewMilestoneTitle }}" onChange="{{ setStaffNewMilestoneTitle }}" placeholder="Titre de l'étape" style="flex: 1; min-width: 180px; border: 1px solid {{ border }}; border-radius: 6px; padding: 10px 14px; font-size: 14px; font-family: inherit;">
+              <input value="{{ staffNewMilestoneDueDate }}" onChange="{{ setStaffNewMilestoneDueDate }}" type="date" style="border: 1px solid {{ border }}; border-radius: 6px; padding: 10px 14px; font-size: 14px; font-family: inherit;">
+            </div>
+            <input value="{{ staffNewMilestoneDescription }}" onChange="{{ setStaffNewMilestoneDescription }}" placeholder="Description (optionnel)" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 10px 14px; font-size: 14px; font-family: inherit; margin-bottom: 10px;">
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;">
+              <button class="nwr-btn" type="button" onClick="{{ setNewMStatusTodo }}" style="padding: 7px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ newMStatusTodoBg }}; color: {{ newMStatusTodoColor }};">À faire</button>
+              <button class="nwr-btn" type="button" onClick="{{ setNewMStatusInProgress }}" style="padding: 7px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ newMStatusInProgressBg }}; color: {{ newMStatusInProgressColor }};">En cours</button>
+              <button class="nwr-btn" type="button" onClick="{{ setNewMStatusValidation }}" style="padding: 7px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ newMStatusValidationBg }}; color: {{ newMStatusValidationColor }};">En validation</button>
+              <button class="nwr-btn" type="button" onClick="{{ setNewMStatusDone }}" style="padding: 7px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ newMStatusDoneBg }}; color: {{ newMStatusDoneColor }};">Livré</button>
+            </div>
+            <button class="nwr-btn" onClick="{{ submitStaffNewMilestone }}" style="background: {{ navy900 }}; color: #fff; border: none; padding: 11px 20px; border-radius: 6px; font-size: 14px; font-weight: 600;">+ Ajouter l'étape</button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <sc-for list="{{ milestonesView }}" as="m" hint-placeholder-count="3">
+              <div style="background: #fff; border: 1px solid {{ border }}; border-left: 4px solid {{ m.badgeColor }}; border-radius: 10px; padding: 18px 22px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                  <div style="font-size: 15px; font-weight: 700; color: {{ navy900 }}; margin-bottom: 4px;">{{ m.title }}</div>
+                  <div style="font-size: 13px; color: {{ textMuted }}; line-height: 1.5;">{{ m.description }}</div>
+                  <div style="font-size: 12px; color: {{ textMuted }}; margin-top: 8px;">{{ m.dueLabel }}</div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+                  <span style="font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 100px; background: {{ m.badgeBg }}; color: {{ m.badgeColor }}; white-space: nowrap;">{{ m.badgeLabel }}</span>
+                  <div style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;">
+                    <button class="nwr-btn" type="button" onClick="{{ m.setTodo }}" style="padding: 4px 8px; border-radius: 100px; font-size: 11px; font-weight: 600; border: 1px solid {{ border }}; background: #fff; color: {{ textDark }};">À faire</button>
+                    <button class="nwr-btn" type="button" onClick="{{ m.setInProgress }}" style="padding: 4px 8px; border-radius: 100px; font-size: 11px; font-weight: 600; border: 1px solid {{ border }}; background: #fff; color: {{ textDark }};">En cours</button>
+                    <button class="nwr-btn" type="button" onClick="{{ m.setValidation }}" style="padding: 4px 8px; border-radius: 100px; font-size: 11px; font-weight: 600; border: 1px solid {{ border }}; background: #fff; color: {{ textDark }};">Validation</button>
+                    <button class="nwr-btn" type="button" onClick="{{ m.setDone }}" style="padding: 4px 8px; border-radius: 100px; font-size: 11px; font-weight: 600; border: 1px solid {{ border }}; background: #fff; color: {{ textDark }};">Livré</button>
+                    <button class="nwr-btn" type="button" onClick="{{ m.remove }}" style="padding: 4px 8px; border-radius: 100px; font-size: 11px; font-weight: 600; border: 1px solid {{ border }}; background: #fff; color: {{ danger }};">Supprimer</button>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ noMilestones }}" hint-placeholder-val="{{ false }}">
+              <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 32px; text-align: center; font-size: 14px; color: {{ textMuted }};">Aucune étape pour ce client pour le moment — ajoutez-en une ci-dessus.</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+          <h1 style="font-size: 26px; color: {{ navy900 }}; margin: 0 0 24px;">Profil</h1>
+          <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 28px; max-width: 520px; margin-bottom: 20px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div><label style="font-size: 12px; font-weight: 600; color: {{ textMuted }}; display: block; margin-bottom: 6px;">Nom</label><div style="font-size: 15px; color: {{ navy900 }};">{{ userName }}</div></div>
+              <div><label style="font-size: 12px; font-weight: 600; color: {{ textMuted }}; display: block; margin-bottom: 6px;">Société</label><div style="font-size: 15px; color: {{ navy900 }};">{{ company }}</div></div>
+              <div><label style="font-size: 12px; font-weight: 600; color: {{ textMuted }}; display: block; margin-bottom: 6px;">Email</label><div style="font-size: 15px; color: {{ navy900 }};">{{ profileEmail }}</div></div>
+              <div><label style="font-size: 12px; font-weight: 600; color: {{ textMuted }}; display: block; margin-bottom: 6px;">Téléphone</label><div style="font-size: 15px; color: {{ navy900 }};">Non renseigné</div></div>
+            </div>
+          </div>
+        </sc-if>
+
+      </main>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showCookieBanner }}" hint-placeholder-val="{{ true }}">
+    <div style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 600; background: #fff; border-top: 1px solid {{ border }}; box-shadow: 0 -8px 32px rgba(13,35,64,0.12); padding: 24px 48px;">
+      <div style="max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 32px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 260px;">
+          <div style="font-size: 15px; font-weight: 700; color: {{ navy900 }}; margin-bottom: 6px;">Respect de votre vie privée</div>
+          <p style="font-size: 13px; line-height: 1.5; color: {{ textMuted }}; margin: 0;">Nous utilisons des cookies essentiels au fonctionnement du site, ainsi que des cookies statistiques, de personnalisation et marketing soumis à votre consentement. Vous pouvez tout accepter, tout refuser, ou personnaliser vos choix. Voir notre <a href="#" onClick="{{ goPrivacy }}" style="color: {{ navy700 }};">politique de confidentialité</a>.</p>
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button class="nwr-btn" onClick="{{ rejectAllCookies }}" style="background: #fff; color: {{ navy900 }}; border: 1px solid {{ border }}; padding: 12px 22px; border-radius: 6px; font-size: 14px; font-weight: 600;">Tout refuser</button>
+          <button class="nwr-btn" onClick="{{ openCookieSettings }}" style="background: #fff; color: {{ navy900 }}; border: 1px solid {{ border }}; padding: 12px 22px; border-radius: 6px; font-size: 14px; font-weight: 600;">Personnaliser</button>
+          <button class="nwr-btn" onClick="{{ acceptAllCookies }}" style="background: {{ navy900 }}; color: #fff; border: none; padding: 12px 22px; border-radius: 6px; font-size: 14px; font-weight: 600;">Tout accepter</button>
+        </div>
+      </div>
+      <div style="max-width: 1100px; margin: 12px auto 0; text-align: right;">
+        <a href="#" onClick="{{ continueWithoutAccepting }}" style="font-size: 12px; color: {{ textMuted }}; text-decoration: underline;">Continuer sans accepter</a>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showCookieSettings }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; inset: 0; background: rgba(13,35,64,0.45); display: flex; align-items: center; justify-content: center; z-index: 700;" onClick="{{ closeCookieSettings }}">
+      <div style="background: #fff; border-radius: 12px; padding: 32px; width: 520px; max-width: 90vw; max-height: 85vh; overflow-y: auto; box-sizing: border-box;" onClick="{{ stopPropagation }}">
+        <h2 style="font-size: 18px; color: {{ navy900 }}; margin: 0 0 8px;">Gérer mes cookies</h2>
+        <p style="font-size: 13px; line-height: 1.5; color: {{ textMuted }}; margin: 0 0 24px;">Choisissez les catégories de cookies que vous autorisez. Vous pouvez modifier ces réglages à tout moment via le lien « Gérer mes cookies » en bas de page.</p>
+
+        <div style="border: 1px solid {{ border }}; border-radius: 8px; padding: 16px 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+          <div>
+            <div style="font-size: 14px; font-weight: 700; color: {{ navy900 }}; margin-bottom: 4px;">Essentiels</div>
+            <p style="font-size: 12px; line-height: 1.5; color: {{ textMuted }}; margin: 0;">Nécessaires au fonctionnement du site (connexion, sécurité, préférences). Toujours actifs.</p>
+          </div>
+          <div style="width: 44px; height: 26px; border-radius: 100px; background: {{ border }}; flex-shrink: 0; position: relative; opacity: 0.6;">
+            <div style="position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff;"></div>
+          </div>
+        </div>
+
+        <div style="border: 1px solid {{ border }}; border-radius: 8px; padding: 16px 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+          <div>
+            <div style="font-size: 14px; font-weight: 700; color: {{ navy900 }}; margin-bottom: 4px;">Statistiques</div>
+            <p style="font-size: 12px; line-height: 1.5; color: {{ textMuted }}; margin: 0;">Mesure d'audience anonymisée pour améliorer le site.</p>
+          </div>
+          <div onClick="{{ toggleStats }}" style="width: 44px; height: 26px; border-radius: 100px; background: {{ statsToggleBg }}; flex-shrink: 0; position: relative; cursor: pointer;">
+            <div style="position: absolute; top: 3px; left: {{ statsTogglePos }}; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .15s;"></div>
+          </div>
+        </div>
+
+        <div style="border: 1px solid {{ border }}; border-radius: 8px; padding: 16px 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+          <div>
+            <div style="font-size: 14px; font-weight: 700; color: {{ navy900 }}; margin-bottom: 4px;">Personnalisation</div>
+            <p style="font-size: 12px; line-height: 1.5; color: {{ textMuted }}; margin: 0;">Adapte le contenu affiché à vos préférences et usages.</p>
+          </div>
+          <div onClick="{{ togglePerso }}" style="width: 44px; height: 26px; border-radius: 100px; background: {{ persoToggleBg }}; flex-shrink: 0; position: relative; cursor: pointer;">
+            <div style="position: absolute; top: 3px; left: {{ persoTogglePos }}; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .15s;"></div>
+          </div>
+        </div>
+
+        <div style="border: 1px solid {{ border }}; border-radius: 8px; padding: 16px 18px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+          <div>
+            <div style="font-size: 14px; font-weight: 700; color: {{ navy900 }}; margin-bottom: 4px;">Marketing</div>
+            <p style="font-size: 12px; line-height: 1.5; color: {{ textMuted }}; margin: 0;">Suivi utilisé pour vous proposer des communications pertinentes.</p>
+          </div>
+          <div onClick="{{ toggleMarketing }}" style="width: 44px; height: 26px; border-radius: 100px; background: {{ marketingToggleBg }}; flex-shrink: 0; position: relative; cursor: pointer;">
+            <div style="position: absolute; top: 3px; left: {{ marketingTogglePos }}; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .15s;"></div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button class="nwr-btn" onClick="{{ rejectAllCookies }}" style="background: #fff; color: {{ navy900 }}; border: 1px solid {{ border }}; padding: 11px 20px; border-radius: 6px; font-size: 14px; font-weight: 600;">Tout refuser</button>
+          <button class="nwr-btn" onClick="{{ saveCookieSettings }}" style="background: {{ navy900 }}; color: #fff; border: none; padding: 11px 20px; border-radius: 6px; font-size: 14px; font-weight: 600;">Enregistrer mes choix</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showNewQuoteModal }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; inset: 0; background: rgba(13,35,64,0.45); display: flex; align-items: center; justify-content: center; z-index: 300;" onClick="{{ closeNewQuoteModal }}">
+      <div class="nwr-modal-460" style="background: #fff; border-radius: 12px; padding: 32px; width: 460px; box-sizing: border-box;" onClick="{{ stopPropagation }}">
+        <h2 style="font-size: 18px; color: {{ navy900 }}; margin: 0 0 20px;">Demander un devis</h2>
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;">
+          <div>
+            <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Objet</label>
+            <input value="{{ newQuoteSubject }}" onChange="{{ setNewQuoteSubject }}" placeholder="Ex : Refonte de notre parc applicatif" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 11px 14px; font-size: 14px; font-family: inherit;">
+          </div>
+          <div>
+            <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Description du besoin</label>
+            <textarea value="{{ newQuoteDescription }}" onChange="{{ setNewQuoteDescription }}" placeholder="Décrivez votre projet ou besoin..." rows="4" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 11px 14px; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button class="nwr-btn" onClick="{{ closeNewQuoteModal }}" style="background: #fff; color: {{ navy900 }}; border: 1px solid {{ border }}; padding: 11px 20px; border-radius: 6px; font-size: 14px; font-weight: 600;">Annuler</button>
+          <button class="nwr-btn" onClick="{{ submitNewQuoteRequest }}" style="background: {{ navy900 }}; color: #fff; border: none; padding: 11px 20px; border-radius: 6px; font-size: 14px; font-weight: 600;">Envoyer la demande</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showNewTicketModal }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; inset: 0; background: rgba(13,35,64,0.45); display: flex; align-items: center; justify-content: center; z-index: 300;" onClick="{{ closeNewTicketModal }}">
+      <div class="nwr-modal-460" style="background: #fff; border-radius: 12px; padding: 32px; width: 460px; box-sizing: border-box;" onClick="{{ stopPropagation }}">
+        <h2 style="font-size: 18px; color: {{ navy900 }}; margin: 0 0 20px;">Nouveau ticket</h2>
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;">
+          <div>
+            <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Sujet</label>
+            <input value="{{ newTicketSubject }}" onChange="{{ setNewTicketSubject }}" placeholder="Décrivez brièvement le problème" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 11px 14px; font-size: 14px; font-family: inherit;">
+          </div>
+          <div>
+            <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Description</label>
+            <textarea value="{{ newTicketDescription }}" onChange="{{ setNewTicketDescription }}" placeholder="Détaillez votre demande..." rows="4" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 11px 14px; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
+          </div>
+          <div>
+            <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Catégorie</label>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="nwr-btn" type="button" onClick="{{ setCategoryBug }}" style="padding: 7px 13px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ catBugBg }}; color: {{ catBugColor }};">Bug</button>
+              <button class="nwr-btn" type="button" onClick="{{ setCategoryFacturation }}" style="padding: 7px 13px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ catFacturationBg }}; color: {{ catFacturationColor }};">Facturation</button>
+              <button class="nwr-btn" type="button" onClick="{{ setCategoryFonctionnalite }}" style="padding: 7px 13px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ catFonctionnaliteBg }}; color: {{ catFonctionnaliteColor }};">Fonctionnalité</button>
+              <button class="nwr-btn" type="button" onClick="{{ setCategoryAutre }}" style="padding: 7px 13px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ catAutreBg }}; color: {{ catAutreColor }};">Autre</button>
+            </div>
+          </div>
+          <div>
+            <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Priorité</label>
+            <div style="display: flex; gap: 6px;">
+              <button class="nwr-btn" type="button" onClick="{{ setPriorityBasse }}" style="flex: 1; padding: 9px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid {{ border }}; background: {{ prioBasseBg }}; color: {{ prioBasseColor }};">Basse</button>
+              <button class="nwr-btn" type="button" onClick="{{ setPriorityNormale }}" style="flex: 1; padding: 9px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid {{ border }}; background: {{ prioNormaleBg }}; color: {{ prioNormaleColor }};">Normale</button>
+              <button class="nwr-btn" type="button" onClick="{{ setPriorityHaute }}" style="flex: 1; padding: 9px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid {{ border }}; background: {{ prioHauteBg }}; color: {{ prioHauteColor }};">Haute</button>
+            </div>
+          </div>
+          <div>
+            <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Pièce jointe (optionnel, 5 Mo max)</label>
+            <input type="file" onChange="{{ setNewTicketFile }}" style="width: 100%; box-sizing: border-box; border: 1px dashed {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 13px; font-family: inherit; background: {{ bg }};">
+            <sc-if value="{{ hasNewTicketFile }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size: 12px; color: {{ textMuted }}; margin-top: 4px;">📎 {{ newTicketFileName }}</div>
+            </sc-if>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button class="nwr-btn" onClick="{{ closeNewTicketModal }}" style="background: #fff; color: {{ navy900 }}; border: 1px solid {{ border }}; padding: 11px 20px; border-radius: 6px; font-size: 14px; font-weight: 600;">Annuler</button>
+          <button class="nwr-btn" onClick="{{ submitNewTicket }}" style="background: {{ navy900 }}; color: #fff; border: none; padding: 11px 20px; border-radius: 6px; font-size: 14px; font-weight: 600;">Créer le ticket</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const QUOTES = [
+  { id: 'q1', ref: 'D-2026-014', date: '02 juin 2026', subject: 'Refonte du parc applicatif', status: 'pending',
+    lines: [{ desc: 'Audit existant', qty: 1, unit: 2400 }, { desc: 'Développement module CRM', qty: 1, unit: 4800 }, { desc: 'Formation équipe', qty: 2, unit: 600 }] },
+  { id: 'q2', ref: 'D-2026-010', date: '05 juil. 2026', subject: 'Mise en place support technique dédié', status: 'requested', lines: [] },
+  { id: 'q3', ref: 'D-2026-003', date: '05 fév. 2026', subject: 'Audit sécurité infrastructure', status: 'refused',
+    lines: [{ desc: 'Audit sécurité', qty: 1, unit: 1800 }] }
+];
+
+const INVOICES = [
+  { id: 'i1', ref: 'F-2026-031', dueDate: '30 juil. 2026', status: 'unpaid',
+    lines: [{ desc: 'Prestation développement CRM', qty: 1, unit: 4800 }] },
+  { id: 'i2', ref: 'F-2026-027', dueDate: '15 juin 2026', status: 'overdue',
+    lines: [{ desc: 'Forfait maintenance mensuel', qty: 2, unit: 1300 }] },
+  { id: 'i3', ref: 'F-2026-019', dueDate: '01 mai 2026', status: 'paid',
+    lines: [{ desc: 'Développement module de reporting', qty: 1, unit: 3200 }] },
+  { id: 'i4', ref: 'F-2026-012', dueDate: '10 mars 2026', status: 'paid',
+    lines: [{ desc: 'Audit sécurité infrastructure', qty: 1, unit: 1800 }] }
+];
+
+const TICKETS = [
+  { id: 't1', ref: 'T-1042', subject: "Erreur de synchronisation des données", status: 'open', priority: 'haute', updated: '18 juil. 2026',
+    messages: [
+      { from: 'client', text: 'La synchronisation des stocks échoue depuis hier matin.', date: '18 juil.' },
+      { from: 'support', text: 'Merci, nous investiguons du côté de notre système interne.', date: '18 juil.' }
+    ] },
+  { id: 't2', ref: 'T-1035', subject: 'Question sur la facture F-2026-027', status: 'in_progress', priority: 'normale', updated: '10 juil. 2026',
+    messages: [
+      { from: 'client', text: 'Pouvez-vous détailler la ligne 2 ?', date: '10 juil.' },
+      { from: 'support', text: "Bien sûr, il s'agit du forfait mensuel de maintenance.", date: '10 juil.' }
+    ] },
+  { id: 't3', ref: 'T-1028', subject: "Demande d'ajout d'utilisateur", status: 'resolved', priority: 'basse', updated: '20 juin 2026',
+    messages: [
+      { from: 'client', text: 'Pouvez-vous ajouter un nouvel utilisateur à mon compte ?', date: '19 juin' },
+      { from: 'support', text: 'Utilisateur ajouté avec succès.', date: '20 juin' }
+    ] }
+];
+
+const QUOTE_BADGE = {
+  requested: { label: 'Demande envoyée', bg: '#e5eefa', color: '#1a4577' },
+  pending: { label: 'En attente de votre décision', bg: '#fbeed9', color: '#8a5a12' },
+  accepted: { label: 'Accepté', bg: '#e4f5ec', color: '#2f8f5b' },
+  refused: { label: 'Refusé', bg: '#fbe6e4', color: '#c1443c' }
+};
+const INVOICE_BADGE = {
+  unpaid: { label: 'Impayée', bg: '#fbeed9', color: '#8a5a12' },
+  overdue: { label: 'En retard', bg: '#fbe6e4', color: '#c1443c' },
+  paid: { label: 'Payée', bg: '#e4f5ec', color: '#2f8f5b' }
+};
+const TICKET_BADGE = {
+  open: { label: 'Ouvert', bg: '#fbeed9', color: '#8a5a12' },
+  in_progress: { label: 'En cours', bg: '#e5eefa', color: '#1a4577' },
+  waiting_client: { label: 'En attente de votre réponse', bg: '#fdf3d6', color: '#8a5a12' },
+  resolved: { label: 'Résolu', bg: '#e4f5ec', color: '#2f8f5b' },
+  closed: { label: 'Fermé', bg: '#eef1f5', color: '#62728a' }
+};
+const MILESTONE_BADGE = {
+  a_faire: { label: 'À faire', bg: '#eef1f5', color: '#62728a' },
+  en_cours: { label: 'En cours', bg: '#e5eefa', color: '#1a4577' },
+  en_validation: { label: 'En validation', bg: '#fbeed9', color: '#8a5a12' },
+  livre: { label: 'Livré', bg: '#e4f5ec', color: '#2f8f5b' }
+};
+
+class Component extends DCLogic {
+  state = {
+    view: 'home',
+    contactForm: { name: '', email: '', subject: '', message: '' },
+    contactSent: false,
+    authMode: 'login',
+    loginEmail: '',
+    loginPassword: '',
+    registerCompany: '',
+    registerContactName: '',
+    authLoading: false,
+    authError: null,
+    authNotice: null,
+    session: null,
+    userName: '',
+    company: '',
+    clientType: 'direct',
+    dataLoading: false,
+    selectedQuoteId: null,
+    selectedInvoiceId: null,
+    selectedTicketId: null,
+    showNewTicketModal: false,
+    newTicketSubject: '',
+    newTicketDescription: '',
+    newTicketCategory: 'autre',
+    newTicketPriority: 'normale',
+    newTicketFile: null,
+    replyFile: null,
+    ticketSearch: '',
+    ticketStatusFilter: 'all',
+    showNewQuoteModal: false,
+    newQuoteSubject: '',
+    newQuoteDescription: '',
+    replyDraft: '',
+    quotes: [],
+    invoices: [],
+    tickets: [],
+    milestones: [],
+    milestoneStatusFilter: 'all',
+    toast: null,
+    cookieConsent: null,
+    showCookieSettings: false,
+    showCookieBannerDismissed: false,
+    draftCookiePrefs: { stats: false, perso: false, marketing: false },
+    isStaff: false,
+    staffClients: [],
+    staffSelectedClientId: null,
+    staffSelectedClient: null,
+    staffNewMilestoneTitle: '',
+    staffNewMilestoneDescription: '',
+    staffNewMilestoneDueDate: '',
+    staffNewMilestoneStatus: 'a_faire'
+  };
+
+  async componentDidMount() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('newwor_cookie_consent') || 'null');
+      if (saved) this.setState({ cookieConsent: saved });
+    } catch (e) {}
+    // Session Supabase deja active (visite precedente) : on recharge le profil et les
+    // donnees sans repasser par l'ecran de connexion.
+    try {
+      const { data } = await window.__sb.auth.getSession();
+      if (data && data.session) {
+        this.setState({ session: data.session });
+        await this.afterAuth(data.session.user.id, { forceView: false });
+      }
+    } catch (e) { /* pas de session valide, on reste sur le site public */ }
+  }
+
+  persistConsent(prefs) {
+    localStorage.setItem('newwor_cookie_consent', JSON.stringify(prefs));
+    this.setState({ cookieConsent: prefs, showCookieSettings: false });
+  }
+
+  showToast(msg) {
+    this.setState({ toast: msg });
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => this.setState({ toast: null }), 2600);
+  }
+
+  goTo(view) { this.setState({ view }); }
+
+  quoteBadge(status) { return QUOTE_BADGE[status] || QUOTE_BADGE.requested; }
+  invoiceBadge(status) { return INVOICE_BADGE[status] || INVOICE_BADGE.unpaid; }
+  ticketBadge(status) { return TICKET_BADGE[status] || TICKET_BADGE.open; }
+  milestoneBadge(status) { return MILESTONE_BADGE[status] || MILESTONE_BADGE.a_faire; }
+
+  formatDate(iso) {
+    if (!iso) return '';
+    try { return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }); }
+    catch (e) { return ''; }
+  }
+
+  translateAuthError(msg) {
+    if (/Invalid login credentials/i.test(msg)) return 'Email ou mot de passe incorrect.';
+    if (/User already registered/i.test(msg)) return 'Un compte existe déjà avec cet email.';
+    if (/Password should be/i.test(msg)) return 'Le mot de passe doit contenir au moins 6 caractères.';
+    if (/Unable to validate email/i.test(msg) || /invalid.*email/i.test(msg)) return 'Adresse email invalide.';
+    return "Une erreur est survenue (" + msg + ").";
+  }
+
+  async loadClientProfile(userId) {
+    const { data, error } = await window.__sb.from('clients').select('company_name, contact_name, client_type').eq('id', userId).single();
+    if (!error && data) {
+      this.setState({ userName: data.contact_name || 'Client', company: data.company_name || '', clientType: data.client_type || 'direct' });
+    }
+  }
+
+  // Determine whether the freshly-authenticated user is a member of the
+  // NEWWOR team (public.staff) or a regular client, and load the matching
+  // data set. forceView=false is used on silent session restore (page load)
+  // to preserve the existing behaviour of not jumping straight into the app.
+  async afterAuth(userId, opts) {
+    const forceView = !opts || opts.forceView !== false;
+    let staffRow = null;
+    try {
+      const { data } = await window.__sb.from('staff').select('id, name').eq('id', userId).maybeSingle();
+      staffRow = data;
+    } catch (e) { /* pas membre de l'equipe */ }
+    if (staffRow) {
+      this.setState({ isStaff: true, userName: staffRow.name || 'Équipe NEWWOR', company: 'NEWWOR Consulting', ...(forceView ? { view: 'staff-clients' } : {}) });
+      await this.loadStaffClients();
+    } else {
+      this.setState({ isStaff: false, ...(forceView ? { view: 'dashboard' } : {}) });
+      await this.loadClientProfile(userId);
+      await this.loadClientData(userId);
+    }
+  }
+
+  async loadStaffClients() {
+    this.setState({ dataLoading: true });
+    try {
+      const { data, error } = await window.__sb.from('clients').select('id, company_name, contact_name, client_type, email').order('company_name', { ascending: true });
+      if (error) throw error;
+      this.setState({ staffClients: data || [], dataLoading: false });
+    } catch (e) {
+      this.setState({ dataLoading: false });
+      this.showToast('Impossible de charger la liste des clients.');
+    }
+  }
+
+  goStaffClients() {
+    this.setState({ view: 'staff-clients', staffSelectedClientId: null, staffSelectedClient: null, selectedTicketId: null });
+  }
+
+  async selectStaffClient(clientId) {
+    const client = this.state.staffClients.find(c => c.id === clientId) || null;
+    this.setState({
+      staffSelectedClientId: clientId, staffSelectedClient: client, view: 'staff-client-detail',
+      selectedTicketId: null, ticketStatusFilter: 'all', ticketSearch: '', milestoneStatusFilter: 'all'
+    });
+    await this.loadClientData(clientId);
+  }
+
+  async setStaffClientType(type) {
+    const s = this.state;
+    if (!s.staffSelectedClientId) return;
+    const { error } = await window.__sb.from('clients').update({ client_type: type }).eq('id', s.staffSelectedClientId);
+    if (error) { this.showToast('Impossible de changer le type de client pour le moment.'); return; }
+    this.setState({
+      staffSelectedClient: s.staffSelectedClient ? { ...s.staffSelectedClient, client_type: type } : null,
+      staffClients: s.staffClients.map(c => c.id === s.staffSelectedClientId ? { ...c, client_type: type } : c)
+    });
+    this.showToast('Type de client mis à jour.');
+  }
+
+  async setTicketStatus(status) {
+    const s = this.state;
+    if (!s.selectedTicketId) return;
+    const nowIso = new Date().toISOString();
+    const { error } = await window.__sb.from('tickets').update({ status, updated_at: nowIso }).eq('id', s.selectedTicketId);
+    if (error) { this.showToast('Impossible de changer le statut pour le moment.'); return; }
+    this.setState({ tickets: s.tickets.map(t => t.id === s.selectedTicketId ? { ...t, status, updated: this.formatDate(nowIso) } : t) });
+    this.showToast('Statut du ticket mis à jour.');
+  }
+
+  async addStaffMilestone() {
+    const s = this.state;
+    if (!s.staffNewMilestoneTitle.trim() || !s.staffSelectedClientId) return;
+    const { data, error } = await window.__sb.from('milestones').insert({
+      client_id: s.staffSelectedClientId, title: s.staffNewMilestoneTitle, description: s.staffNewMilestoneDescription,
+      status: s.staffNewMilestoneStatus, due_date: s.staffNewMilestoneDueDate || null
+    }).select().single();
+    if (error || !data) { this.showToast("Impossible d'ajouter ce jalon pour le moment."); return; }
+    this.setState({
+      milestones: [...s.milestones, data],
+      staffNewMilestoneTitle: '', staffNewMilestoneDescription: '', staffNewMilestoneDueDate: '', staffNewMilestoneStatus: 'a_faire'
+    });
+    this.showToast('Jalon ajouté.');
+  }
+
+  async setMilestoneStatus(id, status) {
+    const { error } = await window.__sb.from('milestones').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) { this.showToast('Impossible de mettre à jour ce jalon.'); return; }
+    this.setState({ milestones: this.state.milestones.map(m => m.id === id ? { ...m, status } : m) });
+  }
+
+  async deleteMilestone(id) {
+    const { error } = await window.__sb.from('milestones').delete().eq('id', id);
+    if (error) { this.showToast('Impossible de supprimer ce jalon.'); return; }
+    this.setState({ milestones: this.state.milestones.filter(m => m.id !== id) });
+    this.showToast('Jalon supprimé.');
+  }
+
+  async uploadAttachment(userId, ticketId, file) {
+    if (!file) return null;
+    if (file.size > 5 * 1024 * 1024) { this.showToast('Fichier trop volumineux (5 Mo maximum).'); return null; }
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = userId + '/' + ticketId + '/' + Date.now() + '_' + safeName;
+    const { error } = await window.__sb.storage.from('ticket-attachments').upload(path, file);
+    if (error) { this.showToast("Impossible d'envoyer la pièce jointe pour le moment."); return null; }
+    return path;
+  }
+
+  async resolveAttachment(path) {
+    if (!path) return null;
+    try {
+      const { data, error } = await window.__sb.storage.from('ticket-attachments').createSignedUrl(path, 3600);
+      if (error || !data) return null;
+      const name = path.split('/').pop();
+      return { url: data.signedUrl, name };
+    } catch (e) { return null; }
+  }
+
+  async loadClientData(userId) {
+    this.setState({ dataLoading: true });
+    try {
+      const [{ data: quotes }, { data: invoices }, { data: tickets }, { data: milestones }] = await Promise.all([
+        window.__sb.from('quotes').select('*').eq('client_id', userId).order('created_at', { ascending: false }),
+        window.__sb.from('invoices').select('*').eq('client_id', userId).order('created_at', { ascending: false }),
+        window.__sb.from('tickets').select('*').eq('client_id', userId).order('updated_at', { ascending: false }),
+        window.__sb.from('milestones').select('*').eq('client_id', userId).order('due_date', { ascending: true })
+      ]);
+      const ticketIds = (tickets || []).map(t => t.id);
+      const messagesByTicket = {};
+      if (ticketIds.length) {
+        const { data: msgs } = await window.__sb.from('ticket_messages').select('*').in('ticket_id', ticketIds).order('created_at', { ascending: true });
+        const resolved = await Promise.all((msgs || []).map(m => this.resolveAttachment(m.attachment_url)));
+        (msgs || []).forEach((m, i) => {
+          if (!messagesByTicket[m.ticket_id]) messagesByTicket[m.ticket_id] = [];
+          const att = resolved[i];
+          messagesByTicket[m.ticket_id].push({
+            from: m.sender === 'client' ? 'client' : 'support', text: m.body, date: this.formatDate(m.created_at),
+            attachmentUrl: att ? att.url : null, attachmentName: att ? att.name : null
+          });
+        });
+      }
+      const ticketsWithMessages = (tickets || []).map(t => ({ ...t, updated: this.formatDate(t.updated_at), messages: messagesByTicket[t.id] || [] }));
+      this.setState({ quotes: quotes || [], invoices: invoices || [], tickets: ticketsWithMessages, milestones: milestones || [], dataLoading: false });
+    } catch (e) {
+      this.setState({ dataLoading: false });
+      this.showToast('Impossible de charger vos données pour le moment.');
+    }
+  }
+
+  async handleLogin() {
+    const s = this.state;
+    if (s.authLoading) return;
+    if (!s.loginEmail || !s.loginPassword) {
+      this.setState({ authError: 'Merci de renseigner votre email et votre mot de passe.' });
+      return;
+    }
+    this.setState({ authLoading: true, authError: null, authNotice: null });
+    const { data, error } = await window.__sb.auth.signInWithPassword({ email: s.loginEmail, password: s.loginPassword });
+    if (error) {
+      this.setState({ authLoading: false, authError: this.translateAuthError(error.message) });
+      return;
+    }
+    this.setState({ authLoading: false, session: data.session, loginEmail: '', loginPassword: '' });
+    await this.afterAuth(data.session.user.id);
+  }
+
+  async handleRegister() {
+    const s = this.state;
+    if (s.authLoading) return;
+    if (!s.loginEmail || !s.loginPassword || !s.registerCompany) {
+      this.setState({ authError: 'Merci de renseigner au moins la société, l’email et le mot de passe.' });
+      return;
+    }
+    this.setState({ authLoading: true, authError: null, authNotice: null });
+    const { data, error } = await window.__sb.auth.signUp({
+      email: s.loginEmail,
+      password: s.loginPassword,
+      options: { data: { company_name: s.registerCompany, contact_name: s.registerContactName } }
+    });
+    if (error) {
+      this.setState({ authLoading: false, authError: this.translateAuthError(error.message) });
+      return;
+    }
+    if (data.session) {
+      this.setState({ authLoading: false, session: data.session, loginEmail: '', loginPassword: '', registerCompany: '', registerContactName: '' });
+      await this.afterAuth(data.session.user.id);
+    } else {
+      this.setState({
+        authLoading: false, authMode: 'login',
+        authNotice: 'Compte créé — vérifiez votre boîte mail pour confirmer votre inscription avant de vous connecter.'
+      });
+    }
+  }
+
+  async handleLogout() {
+    try { await window.__sb.auth.signOut(); } catch (e) {}
+    this.setState({
+      session: null, view: 'home', userName: '', company: '', clientType: 'direct',
+      quotes: [], invoices: [], tickets: [], milestones: [],
+      selectedQuoteId: null, selectedInvoiceId: null, selectedTicketId: null,
+      isStaff: false, staffClients: [], staffSelectedClientId: null, staffSelectedClient: null
+    });
+  }
+
+  async acceptQuote(quoteId) {
+    const q = this.state.quotes.find(x => x.id === quoteId);
+    if (!q) return;
+    const { error } = await window.__sb.from('quotes').update({ status: 'accepted', accepted_at: new Date().toISOString() }).eq('id', quoteId);
+    if (error) { this.showToast("Impossible d'accepter ce devis pour le moment."); return; }
+    const { data: inv, error: invErr } = await window.__sb.from('invoices')
+      .insert({ client_id: q.client_id, quote_id: q.id, ref: 'F-' + Date.now(), amount: q.amount, status: 'unpaid' })
+      .select().single();
+    this.setState({
+      quotes: this.state.quotes.map(x => x.id === quoteId ? { ...x, status: 'accepted' } : x),
+      invoices: invErr || !inv ? this.state.invoices : [inv, ...this.state.invoices]
+    });
+    this.showToast('Devis accepté — une facture a été générée dans votre espace Factures.');
+  }
+
+  async refuseQuote(quoteId) {
+    const { error } = await window.__sb.from('quotes').update({ status: 'refused' }).eq('id', quoteId);
+    if (error) { this.showToast('Impossible de refuser ce devis pour le moment.'); return; }
+    this.setState({ quotes: this.state.quotes.map(q => q.id === quoteId ? { ...q, status: 'refused' } : q) });
+    this.showToast('Devis refusé.');
+  }
+
+  async payInvoice(invoiceId) {
+    const { error } = await window.__sb.from('invoices').update({ status: 'paid' }).eq('id', invoiceId);
+    if (error) { this.showToast('Paiement impossible pour le moment.'); return; }
+    this.setState({ invoices: this.state.invoices.map(i => i.id === invoiceId ? { ...i, status: 'paid' } : i) });
+    this.showToast('Paiement simulé effectué avec succès.');
+  }
+
+  async createQuoteRequest() {
+    const s = this.state;
+    if (!s.newQuoteSubject.trim() || !s.session) return;
+    const userId = s.session.user.id;
+    const { data: quote, error } = await window.__sb.from('quotes').insert({
+      client_id: userId, ref: 'D-' + Date.now(), title: s.newQuoteSubject,
+      description: s.newQuoteDescription || null, amount: 0, status: 'requested'
+    }).select().single();
+    if (error || !quote) { this.showToast("Impossible d'envoyer votre demande pour le moment."); return; }
+    this.setState({ quotes: [quote, ...s.quotes], showNewQuoteModal: false, newQuoteSubject: '', newQuoteDescription: '' });
+    this.showToast('Votre demande de devis a été envoyée.');
+  }
+
+  async createTicket() {
+    const s = this.state;
+    if (!s.newTicketSubject.trim() || !s.session) return;
+    const userId = s.session.user.id;
+    const { data: ticket, error } = await window.__sb.from('tickets').insert({
+      client_id: userId, ref: 'T-' + Date.now(), subject: s.newTicketSubject, status: 'open',
+      priority: s.newTicketPriority, category: s.newTicketCategory
+    }).select().single();
+    if (error || !ticket) { this.showToast('Impossible de créer le ticket pour le moment.'); return; }
+    const firstMsg = s.newTicketDescription || s.newTicketSubject;
+    let attachmentPath = null;
+    if (s.newTicketFile) attachmentPath = await this.uploadAttachment(userId, ticket.id, s.newTicketFile);
+    await window.__sb.from('ticket_messages').insert({ ticket_id: ticket.id, sender: 'client', body: firstMsg, attachment_url: attachmentPath });
+    const att = await this.resolveAttachment(attachmentPath);
+    const newT = {
+      ...ticket, updated: this.formatDate(ticket.updated_at),
+      messages: [{ from: 'client', text: firstMsg, date: this.formatDate(ticket.created_at), attachmentUrl: att ? att.url : null, attachmentName: att ? att.name : null }]
+    };
+    this.setState({
+      tickets: [newT, ...s.tickets], showNewTicketModal: false,
+      newTicketSubject: '', newTicketDescription: '', newTicketCategory: 'autre', newTicketPriority: 'normale', newTicketFile: null
+    });
+    this.showToast('Ticket créé avec succès.');
+  }
+
+  async rateTicket(value) {
+    const s = this.state;
+    if (!s.selectedTicketId) return;
+    const { error } = await window.__sb.from('tickets').update({ satisfaction: value }).eq('id', s.selectedTicketId);
+    if (error) { this.showToast('Impossible d’enregistrer votre note pour le moment.'); return; }
+    this.setState({ tickets: this.state.tickets.map(t => t.id === s.selectedTicketId ? { ...t, satisfaction: value } : t) });
+    this.showToast('Merci pour votre retour !');
+  }
+
+  async replyToTicket() {
+    const s = this.state;
+    if ((!s.replyDraft.trim() && !s.replyFile) || !s.selectedTicketId || !s.session) return;
+    const ticket = s.tickets.find(t => t.id === s.selectedTicketId);
+    const ownerId = (ticket && ticket.client_id) || s.session.user.id;
+    const sender = s.isStaff ? 'team' : 'client';
+    const body = s.replyDraft || '(pièce jointe)';
+    const file = s.replyFile;
+    const nowIso = new Date().toISOString();
+    this.setState({ replyDraft: '', replyFile: null });
+    let attachmentPath = null;
+    if (file) attachmentPath = await this.uploadAttachment(ownerId, s.selectedTicketId, file);
+    const { error } = await window.__sb.from('ticket_messages').insert({ ticket_id: s.selectedTicketId, sender, body, attachment_url: attachmentPath });
+    if (error) { this.showToast("Impossible d'envoyer votre message pour le moment."); return; }
+    await window.__sb.from('tickets').update({ updated_at: nowIso }).eq('id', s.selectedTicketId);
+    const att = await this.resolveAttachment(attachmentPath);
+    this.setState({
+      tickets: this.state.tickets.map(t => t.id === s.selectedTicketId
+        ? { ...t, messages: [...(t.messages || []), { from: sender, text: body, date: this.formatDate(nowIso), attachmentUrl: att ? att.url : null, attachmentName: att ? att.name : null }], updated: this.formatDate(nowIso) }
+        : t)
+    });
+  }
+
+  renderVals() {
+    const s = this.state;
+    const navy900 = '#0d2340', navy700 = '#1a4577', accent = '#c9922e';
+    const border = '#e2e6ec', bg = '#f6f7f9', textDark = '#16223a', textMuted = '#62728a';
+    const success = '#2f8f5b', danger = '#c1443c';
+
+    const isPublic = ['home', 'contact', 'login', 'privacy'].includes(s.view);
+    const isApp = !isPublic;
+
+    const navColor = (v) => s.view === v ? navy900 : textMuted;
+    const navWeight = (v) => s.view === v ? '700' : '500';
+    const sideActive = (v) => s.view === v;
+
+    const quotesView = s.quotes.map(q => {
+      const b = this.quoteBadge(q.status);
+      const amount = q.status === 'requested' ? '—' : Number(q.amount || 0).toLocaleString('fr-FR') + ' €';
+      return { ...q, subject: q.title, date: this.formatDate(q.created_at), amount, badgeLabel: b.label, badgeBg: b.bg, badgeColor: b.color, select: () => this.setState({ view: 'quote-detail', selectedQuoteId: q.id }) };
+    });
+
+    const invoicesView = s.invoices.map(inv => {
+      const b = this.invoiceBadge(inv.status);
+      return { ...inv, amount: Number(inv.amount || 0).toLocaleString('fr-FR'), dueDate: inv.due_date ? this.formatDate(inv.due_date) : 'sous 30 jours', badgeLabel: b.label, badgeBg: b.bg, badgeColor: b.color, select: () => this.setState({ view: 'invoice-detail', selectedInvoiceId: inv.id }) };
+    });
+
+    const ticketsView = s.tickets.map(t => {
+      const b = this.ticketBadge(t.status);
+      return { ...t, badgeLabel: b.label, badgeBg: b.bg, badgeColor: b.color, select: () => this.setState({ view: 'ticket-detail', selectedTicketId: t.id }) };
+    });
+    const searchLower = s.ticketSearch.trim().toLowerCase();
+    const ticketsViewFiltered = ticketsView.filter(t => {
+      const matchesSearch = !searchLower || t.ref.toLowerCase().includes(searchLower) || t.subject.toLowerCase().includes(searchLower);
+      const matchesFilter = s.ticketStatusFilter === 'all' || t.status === s.ticketStatusFilter
+        || (s.ticketStatusFilter === 'resolved' && (t.status === 'resolved' || t.status === 'closed'));
+      return matchesSearch && matchesFilter;
+    });
+    const noTicketsMatch = s.tickets.length > 0 && ticketsViewFiltered.length === 0;
+    const chipOn = { bg: navy900, color: '#fff' };
+    const chipOff = { bg: '#fff', color: textDark };
+    const chipFor = (active) => active ? chipOn : chipOff;
+    const SLA_TEXT = { haute: 'réponse indicative sous 4h', normale: 'réponse indicative sous 24h', basse: 'réponse indicative sous 48h' };
+
+    const milestonesView = s.milestones.map(m => {
+      const b = this.milestoneBadge(m.status);
+      return {
+        ...m, dueLabel: m.due_date ? 'Échéance : ' + this.formatDate(m.due_date) : 'Échéance non définie', badgeLabel: b.label, badgeBg: b.bg, badgeColor: b.color,
+        setTodo: () => this.setMilestoneStatus(m.id, 'a_faire'),
+        setInProgress: () => this.setMilestoneStatus(m.id, 'en_cours'),
+        setValidation: () => this.setMilestoneStatus(m.id, 'en_validation'),
+        setDone: () => this.setMilestoneStatus(m.id, 'livre'),
+        remove: () => this.deleteMilestone(m.id)
+      };
+    });
+    const milestonesViewFiltered = milestonesView.filter(m => s.milestoneStatusFilter === 'all' || m.status === s.milestoneStatusFilter);
+    const noMilestones = s.milestones.length === 0;
+    const noMilestonesMatch = s.milestones.length > 0 && milestonesViewFiltered.length === 0;
+
+    const isDirectClient = s.clientType !== 'service';
+    const isServiceClient = s.clientType === 'service';
+    const upcoming = s.milestones
+      .filter(m => m.due_date && m.status !== 'livre')
+      .sort((a, b) => a.due_date < b.due_date ? -1 : 1);
+    const milestonesSummary = {
+      total: s.milestones.length,
+      countTodo: s.milestones.filter(m => m.status === 'a_faire').length,
+      countInProgress: s.milestones.filter(m => m.status === 'en_cours').length,
+      countValidation: s.milestones.filter(m => m.status === 'en_validation').length,
+      countDone: s.milestones.filter(m => m.status === 'livre').length,
+      nextDueLabel: upcoming.length ? 'Prochaine échéance : ' + this.formatDate(upcoming[0].due_date) : 'Aucune échéance à venir pour le moment.'
+    };
+
+    const staffClientsView = s.staffClients.map(c => ({
+      ...c,
+      displayName: c.company_name || c.contact_name || 'Client',
+      emailLabel: c.email || '—',
+      typeLabel: c.client_type === 'service' ? 'Prestataire (résumé)' : 'Direct',
+      typeBg: c.client_type === 'service' ? '#fbeed9' : '#e5eefa',
+      typeColor: c.client_type === 'service' ? '#8a5a12' : navy700,
+      select: () => this.selectStaffClient(c.id)
+    }));
+    const noStaffClients = s.staffClients.length === 0;
+    const staffSelectedIsDirect = !!(s.staffSelectedClient && s.staffSelectedClient.client_type !== 'service');
+    const staffSelectedIsService = !!(s.staffSelectedClient && s.staffSelectedClient.client_type === 'service');
+
+    // Rapport de suivi de projet par email : declenchement manuel depuis
+    // l'espace equipe via un lien mailto (aucun service tiers requis). Le
+    // corps du message reprend soit le resume (client "service"), soit la
+    // liste complete des jalons (client "direct").
+    let staffReportMailto = null, hasStaffReportEmail = false;
+    if (s.staffSelectedClient) {
+      hasStaffReportEmail = !!s.staffSelectedClient.email;
+      const reportSubject = 'Point sur votre projet — ' + (s.staffSelectedClient.company_name || 'NEWWOR Consulting');
+      const bodyLines = ['Bonjour ' + (s.staffSelectedClient.contact_name || ''), ''];
+      bodyLines.push("Voici un point sur l'avancement de votre projet avec NEWWOR Consulting :", '');
+      if (s.staffSelectedClient.client_type === 'service') {
+        bodyLines.push('À faire : ' + milestonesSummary.countTodo);
+        bodyLines.push('En cours : ' + milestonesSummary.countInProgress);
+        bodyLines.push('En validation : ' + milestonesSummary.countValidation);
+        bodyLines.push('Livré : ' + milestonesSummary.countDone);
+        bodyLines.push('', milestonesSummary.nextDueLabel);
+      } else {
+        if (s.milestones.length === 0) {
+          bodyLines.push('Aucune étape enregistrée pour le moment.');
+        } else {
+          s.milestones.forEach((m) => { bodyLines.push('- ' + m.title + ' (' + this.milestoneBadge(m.status).label + ')'); });
+        }
+      }
+      bodyLines.push('', 'Cordialement,', "L'équipe NEWWOR Consulting");
+      if (hasStaffReportEmail) {
+        staffReportMailto = 'mailto:' + s.staffSelectedClient.email
+          + '?subject=' + encodeURIComponent(reportSubject)
+          + '&body=' + encodeURIComponent(bodyLines.join('\n'));
+      }
+    }
+
+    let currentQuote = null;
+    if (s.selectedQuoteId) {
+      const q = s.quotes.find(x => x.id === s.selectedQuoteId);
+      if (q) {
+        const b = this.quoteBadge(q.status);
+        const amount = Number(q.amount || 0).toLocaleString('fr-FR');
+        const lines = q.status === 'requested' ? [] : [{ desc: q.title, qty: 1, lineTotal: amount }];
+        currentQuote = { ...q, subject: q.title, date: this.formatDate(q.created_at), lines, amount, badgeLabel: b.label, badgeBg: b.bg, badgeColor: b.color,
+          isPending: q.status === 'pending', isRequested: q.status === 'requested', showLines: q.status !== 'requested' };
+      }
+    }
+
+    let currentInvoice = null;
+    if (s.selectedInvoiceId) {
+      const inv = s.invoices.find(x => x.id === s.selectedInvoiceId);
+      if (inv) {
+        const b = this.invoiceBadge(inv.status);
+        const amount = Number(inv.amount || 0).toLocaleString('fr-FR');
+        const lines = [{ desc: inv.ref, qty: 1, lineTotal: amount }];
+        currentInvoice = { ...inv, dueDate: inv.due_date ? this.formatDate(inv.due_date) : 'sous 30 jours', lines, amount, badgeLabel: b.label, badgeBg: b.bg, badgeColor: b.color, isUnpaid: inv.status === 'unpaid' || inv.status === 'overdue' };
+      }
+    }
+
+    let currentTicket = null;
+    if (s.selectedTicketId) {
+      const t = s.tickets.find(x => x.id === s.selectedTicketId);
+      if (t) {
+        const b = this.ticketBadge(t.status);
+        const messages = (t.messages || []).map(m => {
+          const isMine = s.isStaff ? m.from !== 'client' : m.from === 'client';
+          return {
+            text: m.text, date: m.date,
+            who: s.isStaff ? (m.from === 'client' ? 'Client' : 'Vous (équipe)') : (m.from === 'client' ? 'Vous' : 'Support NEWWOR'),
+            align: isMine ? 'flex-end' : 'flex-start',
+            textAlign: isMine ? 'right' : 'left',
+            bg: isMine ? navy900 : '#f0f2f5',
+            color: isMine ? '#fff' : textDark,
+            hasAttachment: !!m.attachmentUrl, attachmentUrl: m.attachmentUrl, attachmentName: m.attachmentName
+          };
+        });
+        const isClosed = t.status === 'resolved' || t.status === 'closed';
+        const statusChip = (val) => ({ bg: t.status === val ? navy900 : '#fff', color: t.status === val ? '#fff' : textDark });
+        currentTicket = {
+          ...t, messages, badgeLabel: b.label, badgeBg: b.bg, badgeColor: b.color,
+          slaText: SLA_TEXT[t.priority] || '',
+          canReply: s.isStaff ? true : !isClosed,
+          showSatisfaction: !s.isStaff && isClosed && !t.satisfaction,
+          hasSatisfaction: !s.isStaff && isClosed && !!t.satisfaction,
+          satisfaction: t.satisfaction || null,
+          rateBg1: t.satisfaction === 1 ? navy900 : '#fff', rateBg2: t.satisfaction === 2 ? navy900 : '#fff',
+          rateBg3: t.satisfaction === 3 ? navy900 : '#fff', rateBg4: t.satisfaction === 4 ? navy900 : '#fff',
+          rateBg5: t.satisfaction === 5 ? navy900 : '#fff',
+          statusOpenBg: statusChip('open').bg, statusOpenColor: statusChip('open').color,
+          statusInProgressBg: statusChip('in_progress').bg, statusInProgressColor: statusChip('in_progress').color,
+          statusWaitingBg: statusChip('waiting_client').bg, statusWaitingColor: statusChip('waiting_client').color,
+          statusResolvedBg: statusChip('resolved').bg, statusResolvedColor: statusChip('resolved').color,
+          statusClosedBg: statusChip('closed').bg, statusClosedColor: statusChip('closed').color
+        };
+      }
+    }
+
+    const pendingQuotesCount = s.quotes.filter(q => q.status === 'pending').length;
+    const unpaidInvoicesTotal = s.invoices.filter(i => i.status === 'unpaid' || i.status === 'overdue')
+      .reduce((sum, i) => sum + Number(i.amount || 0), 0).toLocaleString('fr-FR');
+    const openTicketsCount = s.tickets.filter(t => t.status !== 'resolved' && t.status !== 'closed').length;
+
+    const activityItems = [];
+    s.quotes.forEach(q => activityItems.push({ label: 'Devis ' + q.ref + ' — ' + this.quoteBadge(q.status).label, date: this.formatDate(q.created_at), _t: q.created_at, badgeLabel: 'Devis', badgeBg: '#e5eefa', badgeColor: navy700 }));
+    s.invoices.forEach(i => activityItems.push({ label: 'Facture ' + i.ref + ' — ' + this.invoiceBadge(i.status).label, date: this.formatDate(i.created_at), _t: i.created_at, badgeLabel: 'Facture', badgeBg: i.status === 'overdue' ? '#fbe6e4' : '#e5eefa', badgeColor: i.status === 'overdue' ? danger : navy700 }));
+    s.tickets.forEach(t => activityItems.push({ label: 'Ticket ' + t.ref + ' — ' + this.ticketBadge(t.status).label, date: this.formatDate(t.updated_at), _t: t.updated_at, badgeLabel: 'Ticket', badgeBg: '#fbeed9', badgeColor: '#8a5a12' }));
+    const recentActivity = activityItems.filter(a => a._t).sort((a, b) => new Date(b._t) - new Date(a._t)).slice(0, 4);
+
+    const clientLogos = [{ name: 'Dubois & Fils' }, { name: 'Atlas Groupe' }, { name: 'Verdier SA' }, { name: 'Nordika' }, { name: 'Solenza' }];
+
+    return {
+      navy900, navy700, accent, border, bg, textDark, textMuted, success, danger, clientLogos,
+      isPublic, isApp,
+      isHome: s.view === 'home', isContact: s.view === 'contact', isLogin: s.view === 'login', isPrivacy: s.view === 'privacy',
+      isDashboard: s.view === 'dashboard', isQuotesList: s.view === 'quotes', isQuoteDetail: s.view === 'quote-detail',
+      isInvoicesList: s.view === 'invoices', isInvoiceDetail: s.view === 'invoice-detail',
+      isTicketsList: s.view === 'tickets', isTicketDetail: s.view === 'ticket-detail', isProfile: s.view === 'profile',
+      isMilestones: s.view === 'milestones',
+      isStaffClients: s.view === 'staff-clients', isStaffClientDetail: s.view === 'staff-client-detail',
+      isStaff: s.isStaff, isClient: !s.isStaff,
+      navStaffClientsBg: sideActive('staff-clients') || sideActive('staff-client-detail') ? '#ffffff1a' : 'transparent', navStaffClientsColor: '#fff',
+      goStaffClients: () => this.goStaffClients(),
+      staffClientsView, noStaffClients,
+      staffSelectedClient: s.staffSelectedClient, staffSelectedClientName: s.staffSelectedClient ? (s.staffSelectedClient.company_name || s.staffSelectedClient.contact_name || 'Client') : '',
+      staffReportMailto, hasStaffReportEmail, noStaffReportEmail: !!s.staffSelectedClient && !hasStaffReportEmail,
+      staffSelectedIsDirect, staffSelectedIsService,
+      typeChipDirectBg: staffSelectedIsDirect ? navy900 : '#fff', typeChipDirectColor: staffSelectedIsDirect ? '#fff' : textDark,
+      typeChipServiceBg: staffSelectedIsService ? navy900 : '#fff', typeChipServiceColor: staffSelectedIsService ? '#fff' : textDark,
+      setClientTypeDirect: () => this.setStaffClientType('direct'), setClientTypeService: () => this.setStaffClientType('service'),
+      staffNewMilestoneTitle: s.staffNewMilestoneTitle, staffNewMilestoneDescription: s.staffNewMilestoneDescription, staffNewMilestoneDueDate: s.staffNewMilestoneDueDate,
+      setStaffNewMilestoneTitle: (e) => this.setState({ staffNewMilestoneTitle: e.target.value }),
+      setStaffNewMilestoneDescription: (e) => this.setState({ staffNewMilestoneDescription: e.target.value }),
+      setStaffNewMilestoneDueDate: (e) => this.setState({ staffNewMilestoneDueDate: e.target.value }),
+      newMStatusTodoBg: chipFor(s.staffNewMilestoneStatus === 'a_faire').bg, newMStatusTodoColor: chipFor(s.staffNewMilestoneStatus === 'a_faire').color,
+      newMStatusInProgressBg: chipFor(s.staffNewMilestoneStatus === 'en_cours').bg, newMStatusInProgressColor: chipFor(s.staffNewMilestoneStatus === 'en_cours').color,
+      newMStatusValidationBg: chipFor(s.staffNewMilestoneStatus === 'en_validation').bg, newMStatusValidationColor: chipFor(s.staffNewMilestoneStatus === 'en_validation').color,
+      newMStatusDoneBg: chipFor(s.staffNewMilestoneStatus === 'livre').bg, newMStatusDoneColor: chipFor(s.staffNewMilestoneStatus === 'livre').color,
+      setNewMStatusTodo: () => this.setState({ staffNewMilestoneStatus: 'a_faire' }),
+      setNewMStatusInProgress: () => this.setState({ staffNewMilestoneStatus: 'en_cours' }),
+      setNewMStatusValidation: () => this.setState({ staffNewMilestoneStatus: 'en_validation' }),
+      setNewMStatusDone: () => this.setState({ staffNewMilestoneStatus: 'livre' }),
+      submitStaffNewMilestone: () => this.addStaffMilestone(),
+      milestonesView,
+      setTicketStatusOpen: () => this.setTicketStatus('open'),
+      setTicketStatusInProgress: () => this.setTicketStatus('in_progress'),
+      setTicketStatusWaiting: () => this.setTicketStatus('waiting_client'),
+      setTicketStatusResolved: () => this.setTicketStatus('resolved'),
+      setTicketStatusClosed: () => this.setTicketStatus('closed'),
+      backFromTicket: () => s.isStaff ? this.setState({ view: 'staff-client-detail', selectedTicketId: null }) : this.setState({ view: 'tickets', selectedTicketId: null }),
+      navHomeColor: navColor('home'), navHomeWeight: navWeight('home'),
+      navContactColor: navColor('contact'), navContactWeight: navWeight('contact'),
+      navDashBg: sideActive('dashboard') ? '#ffffff1a' : 'transparent', navDashColor: '#fff',
+      navQuotesBg: sideActive('quotes') || sideActive('quote-detail') ? '#ffffff1a' : 'transparent', navQuotesColor: '#fff',
+      navInvoicesBg: sideActive('invoices') || sideActive('invoice-detail') ? '#ffffff1a' : 'transparent', navInvoicesColor: '#fff',
+      navTicketsBg: sideActive('tickets') || sideActive('ticket-detail') ? '#ffffff1a' : 'transparent', navTicketsColor: '#fff',
+      navMilestonesBg: sideActive('milestones') ? '#ffffff1a' : 'transparent', navMilestonesColor: '#fff',
+      navProfileBg: sideActive('profile') ? '#ffffff1a' : 'transparent', navProfileColor: '#fff',
+      goHome: () => this.goTo('home'), goContact: () => this.goTo('contact'),
+      goLogin: () => s.session ? this.goTo(s.isStaff ? 'staff-clients' : 'dashboard') : this.setState({ view: 'login', authMode: 'login', authError: null }),
+      goRegister: () => s.session ? this.goTo(s.isStaff ? 'staff-clients' : 'dashboard') : this.setState({ view: 'login', authMode: 'register', authError: null }),
+      goPrivacy: () => this.goTo('privacy'),
+      showCookieBanner: !s.cookieConsent && !s.showCookieSettings && !s.showCookieBannerDismissed,
+      showCookieSettings: s.showCookieSettings,
+      acceptAllCookies: () => this.persistConsent({ essential: true, stats: true, perso: true, marketing: true }),
+      rejectAllCookies: () => this.persistConsent({ essential: true, stats: false, perso: false, marketing: false }),
+      continueWithoutAccepting: () => this.setState({ showCookieBannerDismissed: true }),
+      openCookieSettings: () => this.setState({ showCookieSettings: true, draftCookiePrefs: s.cookieConsent ? { stats: s.cookieConsent.stats, perso: s.cookieConsent.perso, marketing: s.cookieConsent.marketing } : { stats: false, perso: false, marketing: false } }),
+      closeCookieSettings: () => this.setState({ showCookieSettings: false }),
+      saveCookieSettings: () => this.persistConsent({ essential: true, ...s.draftCookiePrefs }),
+      toggleStats: () => this.setState({ draftCookiePrefs: { ...s.draftCookiePrefs, stats: !s.draftCookiePrefs.stats } }),
+      togglePerso: () => this.setState({ draftCookiePrefs: { ...s.draftCookiePrefs, perso: !s.draftCookiePrefs.perso } }),
+      toggleMarketing: () => this.setState({ draftCookiePrefs: { ...s.draftCookiePrefs, marketing: !s.draftCookiePrefs.marketing } }),
+      statsToggleBg: s.draftCookiePrefs.stats ? success : border, statsTogglePos: s.draftCookiePrefs.stats ? '21px' : '3px',
+      persoToggleBg: s.draftCookiePrefs.perso ? success : border, persoTogglePos: s.draftCookiePrefs.perso ? '21px' : '3px',
+      marketingToggleBg: s.draftCookiePrefs.marketing ? success : border, marketingTogglePos: s.draftCookiePrefs.marketing ? '21px' : '3px',
+      goDashboard: () => this.goTo('dashboard'), goQuotes: () => this.setState({ view: 'quotes', selectedQuoteId: null }),
+      goInvoices: () => this.setState({ view: 'invoices', selectedInvoiceId: null }),
+      goTickets: () => this.setState({ view: 'tickets', selectedTicketId: null }), goProfile: () => this.goTo('profile'),
+      goMilestones: () => this.goTo('milestones'),
+      milestonesViewFiltered, noMilestones, noMilestonesMatch,
+      isDirectClient, isServiceClient, milestonesSummary,
+      mFilterAllBg: chipFor(s.milestoneStatusFilter === 'all').bg, mFilterAllColor: chipFor(s.milestoneStatusFilter === 'all').color,
+      mFilterTodoBg: chipFor(s.milestoneStatusFilter === 'a_faire').bg, mFilterTodoColor: chipFor(s.milestoneStatusFilter === 'a_faire').color,
+      mFilterInProgressBg: chipFor(s.milestoneStatusFilter === 'en_cours').bg, mFilterInProgressColor: chipFor(s.milestoneStatusFilter === 'en_cours').color,
+      mFilterDoneBg: chipFor(s.milestoneStatusFilter === 'livre').bg, mFilterDoneColor: chipFor(s.milestoneStatusFilter === 'livre').color,
+      setMFilterAll: () => this.setState({ milestoneStatusFilter: 'all' }),
+      setMFilterTodo: () => this.setState({ milestoneStatusFilter: 'a_faire' }),
+      setMFilterInProgress: () => this.setState({ milestoneStatusFilter: 'en_cours' }),
+      setMFilterDone: () => this.setState({ milestoneStatusFilter: 'livre' }),
+      logout: () => this.handleLogout(),
+      contactForm: s.contactForm, contactSent: s.contactSent, contactNotSent: !s.contactSent,
+      setContactName: (e) => this.setState({ contactForm: { ...s.contactForm, name: e.target.value } }),
+      setContactEmail: (e) => this.setState({ contactForm: { ...s.contactForm, email: e.target.value } }),
+      setContactSubject: (e) => this.setState({ contactForm: { ...s.contactForm, subject: e.target.value } }),
+      setContactMessage: (e) => this.setState({ contactForm: { ...s.contactForm, message: e.target.value } }),
+      submitContact: () => this.setState({ contactSent: true }),
+      isRegisterMode: s.authMode === 'register',
+      loginButtonLabel: s.authLoading ? 'Patientez…' : (s.authMode === 'register' ? 'Créer mon compte' : 'Se connecter'),
+      loginTabBg: s.authMode === 'login' ? '#fff' : 'transparent', loginTabColor: s.authMode === 'login' ? navy900 : textMuted,
+      registerTabBg: s.authMode === 'register' ? '#fff' : 'transparent', registerTabColor: s.authMode === 'register' ? navy900 : textMuted,
+      setModeLogin: () => this.setState({ authMode: 'login', authError: null }), setModeRegister: () => this.setState({ authMode: 'register', authError: null }),
+      loginEmail: s.loginEmail, loginPassword: s.loginPassword,
+      registerCompany: s.registerCompany, registerContactName: s.registerContactName,
+      setLoginEmail: (e) => this.setState({ loginEmail: e.target.value, authError: null }),
+      setLoginPassword: (e) => this.setState({ loginPassword: e.target.value, authError: null }),
+      setRegisterCompany: (e) => this.setState({ registerCompany: e.target.value }),
+      setRegisterContactName: (e) => this.setState({ registerContactName: e.target.value }),
+      hasAuthError: !!s.authError, authError: s.authError,
+      hasAuthNotice: !!s.authNotice, authNotice: s.authNotice,
+      login: () => (s.authMode === 'register' ? this.handleRegister() : this.handleLogin()),
+      userName: s.userName, company: s.company, firstName: (s.userName || 'là').split(' ')[0],
+      profileEmail: s.session && s.session.user ? s.session.user.email : '',
+      pendingQuotesCount, unpaidInvoicesTotal, openTicketsCount, recentActivity,
+      quotesView, invoicesView, ticketsView, ticketsViewFiltered, noTicketsMatch, currentQuote, currentInvoice, currentTicket,
+      acceptCurrentQuote: () => this.acceptQuote(s.selectedQuoteId),
+      refuseCurrentQuote: () => this.refuseQuote(s.selectedQuoteId),
+      downloadQuotePdf: () => this.showToast('Téléchargement du PDF — fonctionnalité à venir.'),
+      downloadInvoicePdf: () => this.showToast('Téléchargement du PDF — fonctionnalité à venir.'),
+      payCurrentInvoice: () => this.payInvoice(s.selectedInvoiceId),
+      ticketSearch: s.ticketSearch, setTicketSearch: (e) => this.setState({ ticketSearch: e.target.value }),
+      filterAllBg: chipFor(s.ticketStatusFilter === 'all').bg, filterAllColor: chipFor(s.ticketStatusFilter === 'all').color,
+      filterOpenBg: chipFor(s.ticketStatusFilter === 'open').bg, filterOpenColor: chipFor(s.ticketStatusFilter === 'open').color,
+      filterInProgressBg: chipFor(s.ticketStatusFilter === 'in_progress').bg, filterInProgressColor: chipFor(s.ticketStatusFilter === 'in_progress').color,
+      filterResolvedBg: chipFor(s.ticketStatusFilter === 'resolved').bg, filterResolvedColor: chipFor(s.ticketStatusFilter === 'resolved').color,
+      setFilterAll: () => this.setState({ ticketStatusFilter: 'all' }),
+      setFilterOpen: () => this.setState({ ticketStatusFilter: 'open' }),
+      setFilterInProgress: () => this.setState({ ticketStatusFilter: 'in_progress' }),
+      setFilterResolved: () => this.setState({ ticketStatusFilter: 'resolved' }),
+      rate1: () => this.rateTicket(1), rate2: () => this.rateTicket(2), rate3: () => this.rateTicket(3),
+      rate4: () => this.rateTicket(4), rate5: () => this.rateTicket(5),
+      showNewTicketModal: s.showNewTicketModal, newTicketSubject: s.newTicketSubject, newTicketDescription: s.newTicketDescription,
+      openNewTicketModal: () => this.setState({ showNewTicketModal: true }),
+      closeNewTicketModal: () => this.setState({ showNewTicketModal: false, newTicketSubject: '', newTicketDescription: '', newTicketCategory: 'autre', newTicketPriority: 'normale', newTicketFile: null }),
+      stopPropagation: (e) => e.stopPropagation(),
+      setNewTicketSubject: (e) => this.setState({ newTicketSubject: e.target.value }),
+      setNewTicketDescription: (e) => this.setState({ newTicketDescription: e.target.value }),
+      setNewTicketFile: (e) => this.setState({ newTicketFile: (e.target.files && e.target.files[0]) || null }),
+      hasNewTicketFile: !!s.newTicketFile, newTicketFileName: s.newTicketFile ? s.newTicketFile.name : '',
+      catBugBg: chipFor(s.newTicketCategory === 'bug').bg, catBugColor: chipFor(s.newTicketCategory === 'bug').color,
+      catFacturationBg: chipFor(s.newTicketCategory === 'facturation').bg, catFacturationColor: chipFor(s.newTicketCategory === 'facturation').color,
+      catFonctionnaliteBg: chipFor(s.newTicketCategory === 'fonctionnalite').bg, catFonctionnaliteColor: chipFor(s.newTicketCategory === 'fonctionnalite').color,
+      catAutreBg: chipFor(s.newTicketCategory === 'autre').bg, catAutreColor: chipFor(s.newTicketCategory === 'autre').color,
+      setCategoryBug: () => this.setState({ newTicketCategory: 'bug' }),
+      setCategoryFacturation: () => this.setState({ newTicketCategory: 'facturation' }),
+      setCategoryFonctionnalite: () => this.setState({ newTicketCategory: 'fonctionnalite' }),
+      setCategoryAutre: () => this.setState({ newTicketCategory: 'autre' }),
+      prioBasseBg: chipFor(s.newTicketPriority === 'basse').bg, prioBasseColor: chipFor(s.newTicketPriority === 'basse').color,
+      prioNormaleBg: chipFor(s.newTicketPriority === 'normale').bg, prioNormaleColor: chipFor(s.newTicketPriority === 'normale').color,
+      prioHauteBg: chipFor(s.newTicketPriority === 'haute').bg, prioHauteColor: chipFor(s.newTicketPriority === 'haute').color,
+      setPriorityBasse: () => this.setState({ newTicketPriority: 'basse' }),
+      setPriorityNormale: () => this.setState({ newTicketPriority: 'normale' }),
+      setPriorityHaute: () => this.setState({ newTicketPriority: 'haute' }),
+      submitNewTicket: () => this.createTicket(),
+      showNewQuoteModal: s.showNewQuoteModal, newQuoteSubject: s.newQuoteSubject, newQuoteDescription: s.newQuoteDescription,
+      openNewQuoteModal: () => this.setState({ showNewQuoteModal: true }),
+      closeNewQuoteModal: () => this.setState({ showNewQuoteModal: false, newQuoteSubject: '', newQuoteDescription: '' }),
+      setNewQuoteSubject: (e) => this.setState({ newQuoteSubject: e.target.value }),
+      setNewQuoteDescription: (e) => this.setState({ newQuoteDescription: e.target.value }),
+      submitNewQuoteRequest: () => this.createQuoteRequest(),
+      replyDraft: s.replyDraft, setReplyDraft: (e) => this.setState({ replyDraft: e.target.value }),
+      setReplyFile: (e) => this.setState({ replyFile: (e.target.files && e.target.files[0]) || null }),
+      sendReply: () => this.replyToTicket()
+    };
+  }
+}
+</script>
+<!-- Menu hamburger de l'espace client (mobile) : delegation d'evenements sur document,
+     independante du framework de rendu -- fonctionne meme quand React re-rend la sidebar
+     (deconnexion/reconnexion, navigation entre pages). -->
+<script>
+(function () {
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('#nwr-hamburger-btn');
+    if (btn) {
+      const aside = btn.closest('.nwr-sidebar');
+      if (!aside) return;
+      const open = aside.classList.toggle('nwr-menu-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.setAttribute('aria-label', open ? 'Fermer le menu' : 'Ouvrir le menu');
+      return;
+    }
+    // referme le menu apres un tap sur un lien de nav ou de deconnexion
+    const link = e.target.closest('.nwr-sidebar-nav a, .nwr-sidebar-foot a');
+    if (link) {
+      const aside = link.closest('.nwr-sidebar');
+      if (aside) aside.classList.remove('nwr-menu-open');
+    }
+  });
+})();
+</script>
+<!-- PWA : enregistrement du service worker + aide a l'installation -->
+<script>
+(function () {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js').catch(function (err) {
+        console.warn('Service worker non enregistre :', err);
+      });
+    });
+  }
+
+  // Bandeau "Ajouter a l'ecran d'accueil" pour iOS Safari (pas d'invite automatique sur iOS)
+  function isIos() {
+    return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+  }
+  function isInStandaloneMode() {
+    return ('standalone' in window.navigator && window.navigator.standalone) ||
+      window.matchMedia('(display-mode: standalone)').matches;
+  }
+
+  if (isIos() && !isInStandaloneMode() && !sessionStorage.getItem('nwr-ios-banner-dismissed')) {
+    window.addEventListener('load', function () {
+      var banner = document.createElement('div');
+      banner.setAttribute('role', 'status');
+      banner.style.cssText = 'position:fixed;left:16px;right:16px;bottom:16px;z-index:1000;background:#0d2340;color:#fff;padding:14px 16px;border-radius:10px;box-shadow:0 8px 24px rgba(13,35,64,0.35);font-family:Helvetica,Arial,sans-serif;font-size:14px;display:flex;align-items:center;gap:12px;';
+      banner.innerHTML = '<span style="flex:1;line-height:1.4;">Installez NEWWOR sur votre ecran d\'accueil : touchez <strong>Partager</strong> puis <strong>Sur l\'ecran d\'accueil</strong>.</span>' +
+        '<button style="background:transparent;border:1px solid rgba(255,255,255,0.5);color:#fff;border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer;">OK</button>';
+      banner.querySelector('button').addEventListener('click', function () {
+        banner.remove();
+        sessionStorage.setItem('nwr-ios-banner-dismissed', '1');
+      });
+      document.body.appendChild(banner);
+    });
+  }
+})();
+</script>
+</body>
+</html>
