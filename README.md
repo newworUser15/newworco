@@ -12,6 +12,7 @@ Site vitrine et portail client de NEWWOR Consulting, installable comme une PWA (
 - `supabase_schema_v2.sql` — a executer une seule fois APRES le script ci-dessus : bucket de stockage prive pour les pieces jointes des tickets, table `milestones` (suivi de projet)
 - `supabase_schema_v3.sql` — a executer une seule fois APRES les deux scripts ci-dessus : type de client (`direct` / `service`), table `staff` (equipe NEWWOR) et acces complet de l'equipe a toutes les donnees clients
 - `supabase_schema_v4.sql` — a executer une seule fois APRES les trois scripts ci-dessus : expose l'email du client (`clients.email`) pour l'espace equipe (bouton "Envoyer le rapport par email")
+- `supabase_schema_v5.sql` — a executer une seule fois APRES les quatre scripts ci-dessus : chat en direct (bulle flottante cote visiteur, gestion des conversations cote espace equipe)
 
 ## Backend (Supabase)
 Le portail client (devis, factures, tickets, authentification) est branche sur un projet
@@ -30,9 +31,10 @@ doit rester strictement cote serveur.
 Mise en route (une seule fois) :
 1. Ouvrir le projet Supabase → SQL Editor → coller le contenu de `supabase_schema.sql` → Run.
 2. Coller et executer `supabase_schema_v2.sql`, puis `supabase_schema_v3.sql`, puis
-   `supabase_schema_v4.sql` (dans cet ordre — les scripts sont rejouables sans erreur si l'un
-   d'eux a deja ete execute en partie).
-3. Verifier dans Authentication → Providers que "Email" est active (active par defaut).
+   `supabase_schema_v4.sql`, puis `supabase_schema_v5.sql` (dans cet ordre — les scripts sont
+   rejouables sans erreur si l'un d'eux a deja ete execute en partie).
+3. Verifier dans Authentication → Providers que "Email" est active (active par defaut) et
+   activer "Anonymous Sign-Ins" (requis pour le chat en direct — voir plus bas).
 4. Le site est pret : "Créer un compte" cree un utilisateur Supabase Auth + une ligne
    `clients` automatiquement (trigger `on_auth_user_created`). N'importe quelle adresse email
    (personnelle ou professionnelle) fonctionne pour se connecter — Supabase Auth ne restreint
@@ -102,6 +104,33 @@ Onglet "Suivi de projet" dans l'espace client — l'affichage depend du **type d
   choisir/creer un compte aupres d'un service d'envoi d'emails tiers (Resend, SendGrid,
   Postmark...) et une tache planifiee cote serveur (Supabase Edge Function + cron), non encore
   fait.
+
+## Chat en direct
+Bulle flottante en bas a droite, visible sur les pages publiques et l'espace client (pas dans
+l'espace equipe, qui a sa propre vue de gestion — voir plus bas). **Aucun service tiers** (pas de
+Crisp, Tawk.to, Intercom...) : le chat repose entierement sur Supabase, exactement comme le reste
+du site (tables `chat_sessions` / `chat_messages`, ajoutees par `supabase_schema_v5.sql`).
+- **Cote visiteur** : un internaute sans compte peut ecrire directement depuis le site public —
+  un prenom optionnel lui est demande, puis son premier message demarre la conversation. Techniquement,
+  cela cree une **connexion anonyme Supabase** (`auth.signInAnonymously()`) : le visiteur obtient un
+  vrai `auth.uid()` sans jamais creer de compte email/mot de passe, ce qui permet d'appliquer les
+  memes policies RLS que pour un client connecte (chacun ne voit que sa propre conversation). Un
+  client deja connecte qui ouvre la bulle garde son propre compte. La conversation persiste (via
+  `localStorage`) si le visiteur recharge la page ou revient plus tard sur le meme appareil.
+- **Cote equipe** : nouvelle entree "Chat en direct" dans le menu de l'espace equipe (avec un badge
+  indiquant le nombre de conversations en attente d'une reponse), listant toutes les conversations,
+  triees par derniere activite. Cliquer une conversation affiche l'historique et permet de repondre,
+  ou de la marquer comme fermee/reouverte.
+- **Mise a jour des messages** : par un polling REST simple toutes les 4 secondes (cote visiteur et
+  cote equipe) tant que la bulle ou l'ecran "Chat en direct" est ouvert — pas de WebSocket/Realtime a
+  activer separement dans Supabase, ce qui garde le fonctionnement simple et fiable.
+- **Reglage manuel requis (une seule fois)** : dans le dashboard Supabase → Authentication →
+  Providers → activer **"Anonymous Sign-Ins"**. Sans ce reglage, un visiteur sans compte ne peut pas
+  demarrer de discussion (l'espace client/equipe, deja connecte, n'est pas concerne).
+- **Limite connue (v1)** : si un visiteur discute anonymement puis cree un compte ou se connecte
+  pendant la meme visite, la conversation en cours n'est pas automatiquement rattachee a son nouveau
+  compte (elle reste associee a l'identifiant anonyme). Un rattachement automatique pourra etre
+  ajoute plus tard si besoin.
 
 ## Bibliotheques vendorisees (`assets/vendor/`)
 Le site utilise React, ReactDOM et Babel Standalone (pour transformer le JSX directement dans le

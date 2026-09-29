@@ -441,6 +441,12 @@
           </sc-if>
           <sc-if value="{{ isStaff }}" hint-placeholder-val="{{ false }}">
             <a href="#" onClick="{{ goStaffClients }}" style="text-decoration: none; color: {{ navStaffClientsColor }}; background: {{ navStaffClientsBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Clients</a>
+            <a href="#" onClick="{{ goStaffChat }}" style="text-decoration: none; color: {{ navStaffChatColor }}; background: {{ navStaffChatBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px; display: flex; align-items: center; justify-content: space-between;">
+              <span>Chat en direct</span>
+              <sc-if value="{{ hasStaffChatUnread }}" hint-placeholder-val="{{ false }}">
+                <span style="background: {{ danger }}; color: #fff; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 100px;">{{ staffChatUnreadCount }}</span>
+              </sc-if>
+            </a>
           </sc-if>
         </nav>
         <div class="nwr-sidebar-foot" style="margin-top: auto; border-top: 1px solid #ffffff22; padding-top: 16px;">
@@ -842,6 +848,46 @@
           </div>
         </sc-if>
 
+        <sc-if value="{{ isStaffChat }}" hint-placeholder-val="{{ false }}">
+          <h1 style="font-size: 26px; color: {{ navy900 }}; margin: 0 0 6px;">Chat en direct</h1>
+          <p style="font-size: 14px; color: {{ textMuted }}; margin: 0 0 20px;">Conversations avec les visiteurs du site, en temps quasi réel.</p>
+          <div style="display: grid; grid-template-columns: 300px 1fr; gap: 20px; min-height: 480px;">
+            <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; overflow: hidden; align-self: start;">
+              <sc-for list="{{ staffChatSessionsView }}" as="cs" hint-placeholder-count="2">
+                <div class="nwr-row" onClick="{{ cs.select }}" style="padding: 14px 16px; border-bottom: 1px solid {{ border }}; cursor: pointer; background: {{ cs.rowBg }};">
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                    <div style="font-size: 13px; font-weight: 700; color: {{ navy900 }};">{{ cs.name }}</div>
+                    <span style="font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 100px; background: {{ cs.statusBg }}; color: {{ cs.statusColor }}; white-space: nowrap;">{{ cs.statusLabel }}</span>
+                  </div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ noStaffChatSessions }}" hint-placeholder-val="{{ false }}">
+                <div style="padding: 28px 16px; text-align: center; font-size: 13px; color: {{ textMuted }};">Aucune conversation pour le moment.</div>
+              </sc-if>
+            </div>
+            <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; display: flex; flex-direction: column;">
+              <sc-if value="{{ staffChatHasSelection }}" hint-placeholder-val="{{ false }}">
+                <div style="padding: 14px 18px; border-bottom: 1px solid {{ border }}; display: flex; justify-content: space-between; align-items: center;">
+                  <div style="font-size: 14px; font-weight: 700; color: {{ navy900 }};">{{ staffChatSelectedName }}</div>
+                  <button class="nwr-btn" type="button" onClick="{{ toggleStaffChatStatus }}" style="background: #fff; border: 1px solid {{ border }}; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">{{ staffChatStatusToggleLabel }}</button>
+                </div>
+                <div style="flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 10px; max-height: 380px;">
+                  <sc-for list="{{ staffChatMessagesView }}" as="m" hint-placeholder-count="2">
+                    <div style="align-self: {{ m.align }}; background: {{ m.bg }}; color: {{ m.color }}; padding: 8px 12px; border-radius: 10px; max-width: 70%; font-size: 13px; line-height: 1.4;">{{ m.body }}</div>
+                  </sc-for>
+                </div>
+                <div style="display: flex; gap: 8px; padding: 14px; border-top: 1px solid {{ border }};">
+                  <input value="{{ staffChatDraft }}" onChange="{{ updateStaffChatDraft }}" placeholder="Répondre au visiteur…" style="flex: 1; border: 1px solid {{ border }}; border-radius: 6px; padding: 10px 12px; font-size: 13px; font-family: inherit;">
+                  <button class="nwr-btn" onClick="{{ sendStaffChatReply }}" style="background: {{ navy900 }}; color: #fff; border: none; padding: 10px 18px; border-radius: 6px; font-size: 13px; font-weight: 600;">Envoyer</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ staffChatNoSelection }}" hint-placeholder-val="{{ true }}">
+                <div style="flex: 1; display: flex; align-items: center; justify-content: center; color: {{ textMuted }}; font-size: 13px; padding: 40px;">Sélectionnez une conversation à gauche.</div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
         <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
           <h1 style="font-size: 26px; color: {{ navy900 }}; margin: 0 0 24px;">Profil</h1>
           <div style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; padding: 28px; max-width: 520px; margin-bottom: 20px;">
@@ -999,6 +1045,40 @@
     </div>
   </sc-if>
 
+  <sc-if value="{{ showChatWidget }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; right: 20px; bottom: 20px; z-index: 450; font-family: Helvetica, Arial, sans-serif;">
+      <sc-if value="{{ chatOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="width: 320px; max-width: calc(100vw - 40px); height: 440px; max-height: calc(100vh - 110px); background: #fff; border-radius: 14px; box-shadow: 0 14px 36px rgba(13,35,64,0.25); display: flex; flex-direction: column; overflow: hidden; border: 1px solid {{ border }}; margin-bottom: 14px;">
+          <div style="background: {{ navy900 }}; color: #fff; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+            <div style="font-size: 14px; font-weight: 700;">Discuter avec NEWWOR</div>
+            <div onClick="{{ toggleChatBubble }}" style="cursor: pointer; font-size: 20px; line-height: 1; padding: 2px 4px;">×</div>
+          </div>
+          <div style="flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; background: {{ bg }};">
+            <sc-if value="{{ noChatStarted }}" hint-placeholder-val="{{ true }}">
+              <div style="font-size: 13px; color: {{ textMuted }}; line-height: 1.5;">Une question ? Écrivez-nous, un membre de l'équipe NEWWOR vous répond dès que possible.</div>
+              <input value="{{ chatVisitorName }}" onChange="{{ updateChatVisitorName }}" placeholder="Votre prénom (optionnel)" style="padding: 9px 10px; border: 1px solid {{ border }}; border-radius: 6px; font-size: 13px; font-family: inherit;">
+            </sc-if>
+            <sc-if value="{{ chatStarted }}" hint-placeholder-val="{{ false }}">
+              <sc-for list="{{ chatMessagesView }}" as="m" hint-placeholder-count="2">
+                <div style="align-self: {{ m.align }}; background: {{ m.bg }}; color: {{ m.color }}; padding: 8px 12px; border-radius: 10px; max-width: 85%; font-size: 13px; line-height: 1.4;">{{ m.body }}</div>
+              </sc-for>
+              <sc-if value="{{ chatWaitingReply }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size: 12px; color: {{ textMuted }}; font-style: italic;">Un membre de l'équipe vous répondra bientôt.</div>
+              </sc-if>
+            </sc-if>
+          </div>
+          <div style="display: flex; gap: 8px; padding: 12px; border-top: 1px solid {{ border }}; flex-shrink: 0;">
+            <input value="{{ chatDraft }}" onChange="{{ updateChatDraft }}" placeholder="Votre message…" style="flex: 1; padding: 9px 10px; border: 1px solid {{ border }}; border-radius: 6px; font-size: 13px; font-family: inherit;">
+            <button class="nwr-btn" onClick="{{ sendChatMessage }}" disabled="{{ chatSendDisabled }}" style="background: {{ navy900 }}; color: #fff; border: none; padding: 9px 16px; border-radius: 6px; font-size: 13px; font-weight: 600;">Envoyer</button>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ chatPanelClosed }}" hint-placeholder-val="{{ true }}">
+        <button class="nwr-btn" onClick="{{ toggleChatBubble }}" aria-label="Ouvrir le chat" style="width: 56px; height: 56px; border-radius: 50%; background: {{ navy900 }}; color: #fff; border: none; box-shadow: 0 10px 24px rgba(13,35,64,0.32); font-size: 24px; display: flex; align-items: center; justify-content: center; float: right;">💬</button>
+      </sc-if>
+    </div>
+  </sc-if>
+
 </div>
 
 </x-dc>
@@ -1116,7 +1196,22 @@ class Component extends DCLogic {
     staffNewMilestoneTitle: '',
     staffNewMilestoneDescription: '',
     staffNewMilestoneDueDate: '',
-    staffNewMilestoneStatus: 'a_faire'
+    staffNewMilestoneStatus: 'a_faire',
+    // Chat en direct (bulle visiteur + espace equipe) : aucun service tiers,
+    // uniquement Supabase (auth anonyme pour les visiteurs sans compte,
+    // policies RLS comme le reste du site, mise a jour par polling REST).
+    chatOpen: false,
+    chatStarted: false,
+    chatSessionId: null,
+    chatMessages: [],
+    chatDraft: '',
+    chatVisitorName: '',
+    chatSending: false,
+    staffChatSessions: [],
+    staffChatSelectedId: null,
+    staffChatSelectedSession: null,
+    staffChatMessages: [],
+    staffChatDraft: ''
   };
 
   async componentDidMount() {
@@ -1125,14 +1220,16 @@ class Component extends DCLogic {
       if (saved) this.setState({ cookieConsent: saved });
     } catch (e) {}
     // Session Supabase deja active (visite precedente) : on recharge le profil et les
-    // donnees sans repasser par l'ecran de connexion.
+    // donnees sans repasser par l'ecran de connexion. Une session anonyme (chat en
+    // direct, voir plus bas) n'est jamais traitee comme une connexion client/equipe.
     try {
       const { data } = await window.__sb.auth.getSession();
-      if (data && data.session) {
+      if (data && data.session && !data.session.user.is_anonymous) {
         this.setState({ session: data.session });
         await this.afterAuth(data.session.user.id, { forceView: false });
       }
     } catch (e) { /* pas de session valide, on reste sur le site public */ }
+    await this.restoreChatSession();
   }
 
   persistConsent(prefs) {
@@ -1368,11 +1465,17 @@ class Component extends DCLogic {
 
   async handleLogout() {
     try { await window.__sb.auth.signOut(); } catch (e) {}
+    this.stopChatPolling();
+    clearInterval(this._staffChatListTimer);
+    clearInterval(this._staffChatMsgTimer);
+    localStorage.removeItem('nwr_chat_session_id');
     this.setState({
       session: null, view: 'home', userName: '', company: '', clientType: 'direct',
       quotes: [], invoices: [], tickets: [], milestones: [],
       selectedQuoteId: null, selectedInvoiceId: null, selectedTicketId: null,
-      isStaff: false, staffClients: [], staffSelectedClientId: null, staffSelectedClient: null
+      isStaff: false, staffClients: [], staffSelectedClientId: null, staffSelectedClient: null,
+      chatOpen: false, chatStarted: false, chatSessionId: null, chatMessages: [], chatDraft: '', chatVisitorName: '',
+      staffChatSessions: [], staffChatSelectedId: null, staffChatSelectedSession: null, staffChatMessages: [], staffChatDraft: ''
     });
   }
 
@@ -1473,6 +1576,161 @@ class Component extends DCLogic {
         ? { ...t, messages: [...(t.messages || []), { from: sender, text: body, date: this.formatDate(nowIso), attachmentUrl: att ? att.url : null, attachmentName: att ? att.name : null }], updated: this.formatDate(nowIso) }
         : t)
     });
+  }
+
+  // ---------------------------------------------------------------------
+  // Chat en direct : bulle flottante cote visiteur (site public + espace
+  // client) et gestion cote espace equipe. Aucun service tiers (pas de
+  // Crisp/Tawk/Intercom...) : uniquement Supabase, comme le reste du site.
+  // Un visiteur sans compte demarre une connexion anonyme Supabase (garde
+  // un vrai auth.uid(), ce qui permet des policies RLS normales) ; un
+  // visiteur deja connecte comme client garde son propre compte. Les
+  // nouveaux messages sont recuperes par un polling REST toutes les 4
+  // secondes tant que la bulle ou l'ecran equipe est ouvert (pas de
+  // WebSocket/Realtime a activer separement dans Supabase).
+  // ---------------------------------------------------------------------
+
+  async restoreChatSession() {
+    const savedId = localStorage.getItem('nwr_chat_session_id');
+    if (!savedId) return;
+    try {
+      const { data, error } = await window.__sb.from('chat_sessions').select('*').eq('id', savedId).maybeSingle();
+      if (error || !data) { localStorage.removeItem('nwr_chat_session_id'); return; }
+      this.setState({ chatSessionId: data.id, chatStarted: true, chatVisitorName: data.visitor_name || '' });
+      await this.loadChatMessages(data.id);
+    } catch (e) { localStorage.removeItem('nwr_chat_session_id'); }
+  }
+
+  toggleChatBubble() {
+    const open = !this.state.chatOpen;
+    this.setState({ chatOpen: open });
+    if (open && this.state.chatSessionId) this.startChatPolling();
+    else this.stopChatPolling();
+  }
+
+  updateChatDraft(e) { this.setState({ chatDraft: e.target.value }); }
+  updateChatVisitorName(e) { this.setState({ chatVisitorName: e.target.value }); }
+
+  async loadChatMessages(sessionId) {
+    const { data, error } = await window.__sb.from('chat_messages').select('*').eq('session_id', sessionId).order('created_at', { ascending: true });
+    if (!error) this.setState({ chatMessages: data || [] });
+  }
+
+  startChatPolling() {
+    clearInterval(this._chatPollTimer);
+    this._chatPollTimer = setInterval(() => {
+      if (this.state.chatSessionId) this.loadChatMessages(this.state.chatSessionId);
+    }, 4000);
+  }
+
+  stopChatPolling() { clearInterval(this._chatPollTimer); }
+
+  async sendChatMessage() {
+    const s = this.state;
+    const body = s.chatDraft.trim();
+    if (!body || s.chatSending) return;
+    this.setState({ chatSending: true });
+    try {
+      let sessionId = s.chatSessionId;
+      if (!sessionId) {
+        const { data: authData } = await window.__sb.auth.getSession();
+        let userId = authData && authData.session ? authData.session.user.id : null;
+        if (!userId) {
+          const { data: anonData, error: anonError } = await window.__sb.auth.signInAnonymously();
+          if (anonError || !anonData.session) {
+            this.showToast('Impossible de démarrer la discussion pour le moment.');
+            this.setState({ chatSending: false });
+            return;
+          }
+          userId = anonData.session.user.id;
+        }
+        const { data: sessionRow, error: sessionError } = await window.__sb.from('chat_sessions')
+          .insert({ visitor_id: userId, visitor_name: s.chatVisitorName || null, status: 'open' })
+          .select().single();
+        if (sessionError || !sessionRow) {
+          this.showToast('Impossible de démarrer la discussion pour le moment.');
+          this.setState({ chatSending: false });
+          return;
+        }
+        sessionId = sessionRow.id;
+        localStorage.setItem('nwr_chat_session_id', sessionId);
+        this.setState({ chatSessionId: sessionId, chatStarted: true });
+        this.startChatPolling();
+      }
+      const { error } = await window.__sb.from('chat_messages').insert({ session_id: sessionId, sender: 'visitor', body });
+      if (error) {
+        this.showToast("Impossible d'envoyer votre message pour le moment.");
+        this.setState({ chatSending: false });
+        return;
+      }
+      this.setState({ chatDraft: '', chatSending: false });
+      await this.loadChatMessages(sessionId);
+    } catch (e) {
+      this.setState({ chatSending: false });
+      this.showToast("Impossible d'envoyer votre message pour le moment.");
+    }
+  }
+
+  goStaffChat() {
+    this.setState({ view: 'staff-chat', staffChatSelectedId: null, staffChatSelectedSession: null, staffChatMessages: [] });
+    this.loadStaffChatSessions();
+    this.startStaffChatListPolling();
+  }
+
+  async loadStaffChatSessions() {
+    const { data, error } = await window.__sb.from('chat_sessions').select('*').order('updated_at', { ascending: false });
+    if (!error) this.setState({ staffChatSessions: data || [] });
+  }
+
+  startStaffChatListPolling() {
+    clearInterval(this._staffChatListTimer);
+    this._staffChatListTimer = setInterval(() => {
+      if (this.state.view === 'staff-chat') this.loadStaffChatSessions();
+      else clearInterval(this._staffChatListTimer);
+    }, 4000);
+  }
+
+  async selectStaffChatSession(sessionId) {
+    const session = this.state.staffChatSessions.find(c => c.id === sessionId) || null;
+    this.setState({ staffChatSelectedId: sessionId, staffChatSelectedSession: session });
+    await this.loadStaffChatMessages(sessionId);
+    this.startStaffChatMessagesPolling();
+  }
+
+  async loadStaffChatMessages(sessionId) {
+    const { data, error } = await window.__sb.from('chat_messages').select('*').eq('session_id', sessionId).order('created_at', { ascending: true });
+    if (!error) this.setState({ staffChatMessages: data || [] });
+  }
+
+  startStaffChatMessagesPolling() {
+    clearInterval(this._staffChatMsgTimer);
+    this._staffChatMsgTimer = setInterval(() => {
+      if (this.state.staffChatSelectedId) this.loadStaffChatMessages(this.state.staffChatSelectedId);
+      else clearInterval(this._staffChatMsgTimer);
+    }, 4000);
+  }
+
+  updateStaffChatDraft(e) { this.setState({ staffChatDraft: e.target.value }); }
+
+  async sendStaffChatReply() {
+    const s = this.state;
+    const body = s.staffChatDraft.trim();
+    if (!body || !s.staffChatSelectedId) return;
+    this.setState({ staffChatDraft: '' });
+    const { error } = await window.__sb.from('chat_messages').insert({ session_id: s.staffChatSelectedId, sender: 'staff', body });
+    if (error) { this.showToast("Impossible d'envoyer votre réponse pour le moment."); return; }
+    await this.loadStaffChatMessages(s.staffChatSelectedId);
+    await this.loadStaffChatSessions();
+  }
+
+  async toggleStaffChatStatus() {
+    const s = this.state;
+    if (!s.staffChatSelectedId || !s.staffChatSelectedSession) return;
+    const newStatus = s.staffChatSelectedSession.status === 'closed' ? 'open' : 'closed';
+    const { error } = await window.__sb.from('chat_sessions').update({ status: newStatus }).eq('id', s.staffChatSelectedId);
+    if (error) { this.showToast('Impossible de changer le statut pour le moment.'); return; }
+    this.setState({ staffChatSelectedSession: { ...s.staffChatSelectedSession, status: newStatus } });
+    await this.loadStaffChatSessions();
   }
 
   renderVals() {
@@ -1663,6 +1921,39 @@ class Component extends DCLogic {
 
     const clientLogos = [{ name: 'Dubois & Fils' }, { name: 'Atlas Groupe' }, { name: 'Verdier SA' }, { name: 'Nordika' }, { name: 'Solenza' }];
 
+    // ----- Chat en direct -----
+    const showChatWidget = !s.isStaff;
+    const chatMessagesView = s.chatMessages.map(m => ({
+      body: m.body,
+      align: m.sender === 'visitor' ? 'flex-end' : 'flex-start',
+      bg: m.sender === 'visitor' ? navy900 : '#eef1f5',
+      color: m.sender === 'visitor' ? '#fff' : textDark
+    }));
+    const chatWaitingReply = s.chatMessages.length > 0 && s.chatMessages[s.chatMessages.length - 1].sender === 'visitor';
+    const chatSendDisabled = !s.chatDraft.trim() || s.chatSending;
+
+    const staffChatSessionsView = s.staffChatSessions.map(cs => ({
+      ...cs,
+      name: cs.visitor_name || 'Visiteur',
+      statusLabel: cs.status === 'closed' ? 'Fermé' : 'Ouvert',
+      statusBg: cs.status === 'closed' ? '#eef1f5' : '#e4f5ec',
+      statusColor: cs.status === 'closed' ? textMuted : success,
+      rowBg: s.staffChatSelectedId === cs.id ? bg : '#fff',
+      select: () => this.selectStaffChatSession(cs.id)
+    }));
+    const noStaffChatSessions = s.staffChatSessions.length === 0;
+    const staffChatUnreadCount = s.staffChatSessions.filter(cs => cs.status !== 'closed' && cs.last_sender === 'visitor').length;
+    const staffChatHasSelection = !!s.staffChatSelectedId;
+    const staffChatNoSelection = !s.staffChatSelectedId;
+    const staffChatSelectedName = s.staffChatSelectedSession ? (s.staffChatSelectedSession.visitor_name || 'Visiteur') : '';
+    const staffChatMessagesView = s.staffChatMessages.map(m => ({
+      body: m.body,
+      align: m.sender === 'staff' ? 'flex-end' : 'flex-start',
+      bg: m.sender === 'staff' ? navy900 : '#eef1f5',
+      color: m.sender === 'staff' ? '#fff' : textDark
+    }));
+    const staffChatStatusToggleLabel = s.staffChatSelectedSession && s.staffChatSelectedSession.status === 'closed' ? 'Réouvrir' : 'Clore la conversation';
+
     return {
       navy900, navy700, accent, border, bg, textDark, textMuted, success, danger, clientLogos,
       isPublic, isApp,
@@ -1814,7 +2105,25 @@ class Component extends DCLogic {
       submitNewQuoteRequest: () => this.createQuoteRequest(),
       replyDraft: s.replyDraft, setReplyDraft: (e) => this.setState({ replyDraft: e.target.value }),
       setReplyFile: (e) => this.setState({ replyFile: (e.target.files && e.target.files[0]) || null }),
-      sendReply: () => this.replyToTicket()
+      sendReply: () => this.replyToTicket(),
+
+      // ----- Chat en direct -----
+      isStaffChat: s.view === 'staff-chat',
+      navStaffChatBg: sideActive('staff-chat') ? '#ffffff1a' : 'transparent', navStaffChatColor: '#fff',
+      goStaffChat: () => this.goStaffChat(),
+      hasStaffChatUnread: staffChatUnreadCount > 0, staffChatUnreadCount,
+      staffChatSessionsView, noStaffChatSessions,
+      staffChatHasSelection, staffChatNoSelection, staffChatSelectedName, staffChatMessagesView, staffChatStatusToggleLabel,
+      staffChatDraft: s.staffChatDraft, updateStaffChatDraft: (e) => this.updateStaffChatDraft(e),
+      sendStaffChatReply: () => this.sendStaffChatReply(),
+      toggleStaffChatStatus: () => this.toggleStaffChatStatus(),
+      showChatWidget, chatOpen: s.chatOpen, chatPanelClosed: !s.chatOpen,
+      toggleChatBubble: () => this.toggleChatBubble(),
+      chatStarted: s.chatStarted, noChatStarted: !s.chatStarted,
+      chatMessagesView, chatWaitingReply,
+      chatVisitorName: s.chatVisitorName, updateChatVisitorName: (e) => this.updateChatVisitorName(e),
+      chatDraft: s.chatDraft, updateChatDraft: (e) => this.updateChatDraft(e),
+      chatSendDisabled, sendChatMessage: () => this.sendChatMessage()
     };
   }
 }

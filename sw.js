@@ -4,7 +4,7 @@
 //  - fichiers statiques (support.js, images, manifest, icones) : cache en priorite, mise a jour en arriere-plan
 //  - tout le reste (formulaires, futures API, requetes cross-origin) : jamais intercepte, toujours reseau direct
 
-const CACHE_NAME = 'newwor-shell-v9';
+const CACHE_NAME = 'newwor-shell-v10';
 
 const APP_SHELL = [
   './',
