@@ -13,6 +13,7 @@ Site vitrine et portail client de NEWWOR Consulting, installable comme une PWA (
 - `supabase_schema_v3.sql` — a executer une seule fois APRES les deux scripts ci-dessus : type de client (`direct` / `service`), table `staff` (equipe NEWWOR) et acces complet de l'equipe a toutes les donnees clients
 - `supabase_schema_v4.sql` — a executer une seule fois APRES les trois scripts ci-dessus : expose l'email du client (`clients.email`) pour l'espace equipe (bouton "Envoyer le rapport par email")
 - `supabase_schema_v5.sql` — a executer une seule fois APRES les quatre scripts ci-dessus : chat en direct (bulle flottante cote visiteur, gestion des conversations cote espace equipe)
+- `supabase_schema_v6.sql` — a executer une seule fois APRES les cinq scripts ci-dessus : validation manuelle des inscriptions (`clients.status`)
 
 ## Backend (Supabase)
 Le portail client (devis, factures, tickets, authentification) est branche sur un projet
@@ -31,8 +32,9 @@ doit rester strictement cote serveur.
 Mise en route (une seule fois) :
 1. Ouvrir le projet Supabase → SQL Editor → coller le contenu de `supabase_schema.sql` → Run.
 2. Coller et executer `supabase_schema_v2.sql`, puis `supabase_schema_v3.sql`, puis
-   `supabase_schema_v4.sql`, puis `supabase_schema_v5.sql` (dans cet ordre — les scripts sont
-   rejouables sans erreur si l'un d'eux a deja ete execute en partie).
+   `supabase_schema_v4.sql`, puis `supabase_schema_v5.sql`, puis `supabase_schema_v6.sql`
+   (dans cet ordre — les scripts sont rejouables sans erreur si l'un d'eux a deja ete execute
+   en partie).
 3. Verifier dans Authentication → Providers que "Email" est active (active par defaut) et
    activer "Anonymous Sign-Ins" (requis pour le chat en direct — voir plus bas).
 4. Le site est pret : "Créer un compte" cree un utilisateur Supabase Auth + une ligne
@@ -131,6 +133,26 @@ du site (tables `chat_sessions` / `chat_messages`, ajoutees par `supabase_schema
   pendant la meme visite, la conversation en cours n'est pas automatiquement rattachee a son nouveau
   compte (elle reste associee a l'identifiant anonyme). Un rattachement automatique pourra etre
   ajoute plus tard si besoin.
+
+## Validation manuelle des inscriptions
+Par defaut, n'importe qui peut cliquer "Créer un compte" sur le site — mais depuis
+`supabase_schema_v6.sql`, un nouveau compte n'a **aucun acces a l'espace client** tant que
+l'equipe ne l'a pas valide manuellement.
+- A l'inscription, `clients.status` vaut `pending` (par defaut). Le client voit, apres connexion,
+  un ecran "Inscription en attente de validation" — aucune donnee (devis, factures, tickets,
+  suivi de projet) n'est chargee ni accessible tant que ce statut n'est pas change.
+- Cote espace equipe : l'onglet "Clients" affiche desormais un badge avec le nombre
+  d'inscriptions en attente, une colonne "Statut" dans la liste, et sur la fiche de chaque
+  client, trois boutons "En attente / Approuvé / Refusé" pour decider.
+- **Approuvé** : le client retrouve l'acces complet a son espace des sa prochaine connexion
+  (ou immediatement s'il est deja connecte et recharge la page).
+- **Refusé** : le client voit un ecran "Inscription non validée" a la place de son espace.
+- La restriction n'est pas que visuelle : la policy RLS `tickets_insert_own` empeche aussi,
+  cote base de donnees, un compte non approuve de creer un ticket meme en contournant
+  l'interface du site.
+- **Comptes deja existants au moment d'executer `supabase_schema_v6.sql`** : ils sont approuves
+  automatiquement une seule fois (pas de blocage retroactif) — seuls les comptes crees apres
+  ce script demarrent en attente de validation.
 
 ## Bibliotheques vendorisees (`assets/vendor/`)
 Le site utilise React, ReactDOM et Babel Standalone (pour transformer le JSX directement dans le

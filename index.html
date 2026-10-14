@@ -432,15 +432,22 @@
         </div>
         <nav class="nwr-sidebar-nav" style="display: flex; flex-direction: column; gap: 2px;">
           <sc-if value="{{ isClient }}" hint-placeholder-val="{{ true }}">
-            <a href="#" onClick="{{ goDashboard }}" style="text-decoration: none; color: {{ navDashColor }}; background: {{ navDashBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Tableau de bord</a>
-            <a href="#" onClick="{{ goQuotes }}" style="text-decoration: none; color: {{ navQuotesColor }}; background: {{ navQuotesBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Devis</a>
-            <a href="#" onClick="{{ goInvoices }}" style="text-decoration: none; color: {{ navInvoicesColor }}; background: {{ navInvoicesBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Factures</a>
-            <a href="#" onClick="{{ goTickets }}" style="text-decoration: none; color: {{ navTicketsColor }}; background: {{ navTicketsBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Tickets</a>
-            <a href="#" onClick="{{ goMilestones }}" style="text-decoration: none; color: {{ navMilestonesColor }}; background: {{ navMilestonesBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Suivi de projet</a>
-            <a href="#" onClick="{{ goProfile }}" style="text-decoration: none; color: {{ navProfileColor }}; background: {{ navProfileBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Profil</a>
+            <sc-if value="{{ isApprovedClient }}" hint-placeholder-val="{{ true }}">
+              <a href="#" onClick="{{ goDashboard }}" style="text-decoration: none; color: {{ navDashColor }}; background: {{ navDashBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Tableau de bord</a>
+              <a href="#" onClick="{{ goQuotes }}" style="text-decoration: none; color: {{ navQuotesColor }}; background: {{ navQuotesBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Devis</a>
+              <a href="#" onClick="{{ goInvoices }}" style="text-decoration: none; color: {{ navInvoicesColor }}; background: {{ navInvoicesBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Factures</a>
+              <a href="#" onClick="{{ goTickets }}" style="text-decoration: none; color: {{ navTicketsColor }}; background: {{ navTicketsBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Tickets</a>
+              <a href="#" onClick="{{ goMilestones }}" style="text-decoration: none; color: {{ navMilestonesColor }}; background: {{ navMilestonesBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Suivi de projet</a>
+              <a href="#" onClick="{{ goProfile }}" style="text-decoration: none; color: {{ navProfileColor }}; background: {{ navProfileBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Profil</a>
+            </sc-if>
           </sc-if>
           <sc-if value="{{ isStaff }}" hint-placeholder-val="{{ false }}">
-            <a href="#" onClick="{{ goStaffClients }}" style="text-decoration: none; color: {{ navStaffClientsColor }}; background: {{ navStaffClientsBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px;">Clients</a>
+            <a href="#" onClick="{{ goStaffClients }}" style="text-decoration: none; color: {{ navStaffClientsColor }}; background: {{ navStaffClientsBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px; display: flex; align-items: center; justify-content: space-between;">
+              <span>Clients</span>
+              <sc-if value="{{ hasPendingRegistrations }}" hint-placeholder-val="{{ false }}">
+                <span style="background: {{ danger }}; color: #fff; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 100px;">{{ pendingRegistrationsCount }}</span>
+              </sc-if>
+            </a>
             <a href="#" onClick="{{ goStaffChat }}" style="text-decoration: none; color: {{ navStaffChatColor }}; background: {{ navStaffChatBg }}; font-weight: 600; font-size: 14px; padding: 11px 12px; border-radius: 7px; display: flex; align-items: center; justify-content: space-between;">
               <span>Chat en direct</span>
               <sc-if value="{{ hasStaffChatUnread }}" hint-placeholder-val="{{ false }}">
@@ -457,6 +464,22 @@
       </aside>
 
       <main class="nwr-app-content" style="flex: 1; padding: 40px 48px; box-sizing: border-box; overflow: auto;">
+
+        <sc-if value="{{ isPendingApproval }}" hint-placeholder-val="{{ false }}">
+          <div style="max-width: 480px; margin: 60px auto; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 16px;">⏳</div>
+            <h1 style="font-size: 22px; color: {{ navy900 }}; margin: 0 0 12px;">Inscription en attente de validation</h1>
+            <p style="font-size: 14px; color: {{ textMuted }}; line-height: 1.6;">Merci pour votre inscription. Un membre de l'équipe NEWWOR doit valider votre compte avant que vous puissiez accéder à votre espace. Vous recevrez un accès dès que ce sera fait.</p>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isRejectedApproval }}" hint-placeholder-val="{{ false }}">
+          <div style="max-width: 480px; margin: 60px auto; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 16px;">✕</div>
+            <h1 style="font-size: 22px; color: {{ navy900 }}; margin: 0 0 12px;">Inscription non validée</h1>
+            <p style="font-size: 14px; color: {{ textMuted }}; line-height: 1.6;">Votre demande d'inscription n'a pas été retenue par l'équipe NEWWOR. Pour plus d'informations, vous pouvez nous contacter.</p>
+          </div>
+        </sc-if>
 
         <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ false }}">
           <h1 style="font-size: 26px; color: {{ navy900 }}; margin: 0 0 4px;">Bonjour, {{ firstName }}</h1>
@@ -741,15 +764,16 @@
           <h1 style="font-size: 26px; color: {{ navy900 }}; margin: 0 0 6px;">Clients</h1>
           <p style="font-size: 14px; color: {{ textMuted }}; margin: 0 0 20px;">Sélectionnez un client pour gérer ses tickets, son suivi de projet et son type d'accès.</p>
           <div class="nwr-table-wrap" style="background: #fff; border: 1px solid {{ border }}; border-radius: 10px; overflow: hidden;">
-            <div class="nwr-table-row" style="display: grid; grid-template-columns: 1.6fr 1.2fr 1.8fr 160px; padding: 14px 20px; font-size: 12px; font-weight: 700; color: {{ textMuted }}; border-bottom: 1px solid {{ border }}; text-transform: uppercase; letter-spacing: 0.03em;">
-              <div>Société</div><div>Contact</div><div>Email</div><div>Type</div>
+            <div class="nwr-table-row" style="display: grid; grid-template-columns: 1.4fr 1fr 1.6fr 140px 130px; padding: 14px 20px; font-size: 12px; font-weight: 700; color: {{ textMuted }}; border-bottom: 1px solid {{ border }}; text-transform: uppercase; letter-spacing: 0.03em;">
+              <div>Société</div><div>Contact</div><div>Email</div><div>Type</div><div>Statut</div>
             </div>
             <sc-for list="{{ staffClientsView }}" as="c" hint-placeholder-count="3">
-              <div class="nwr-row nwr-table-row" onClick="{{ c.select }}" style="display: grid; grid-template-columns: 1.6fr 1.2fr 1.8fr 160px; padding: 16px 20px; border-bottom: 1px solid {{ border }}; align-items: center; cursor: pointer; font-size: 14px;">
+              <div class="nwr-row nwr-table-row" onClick="{{ c.select }}" style="display: grid; grid-template-columns: 1.4fr 1fr 1.6fr 140px 130px; padding: 16px 20px; border-bottom: 1px solid {{ border }}; align-items: center; cursor: pointer; font-size: 14px;">
                 <div style="font-weight: 600; color: {{ navy900 }};">{{ c.displayName }}</div>
                 <div style="color: {{ textMuted }};">{{ c.contact_name }}</div>
                 <div style="color: {{ textMuted }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ c.emailLabel }}</div>
                 <span style="font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 100px; background: {{ c.typeBg }}; color: {{ c.typeColor }}; justify-self: start;">{{ c.typeLabel }}</span>
+                <span style="font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 100px; background: {{ c.statusBg }}; color: {{ c.statusColor }}; justify-self: start;">{{ c.statusLabel }}</span>
               </div>
             </sc-for>
             <sc-if value="{{ noStaffClients }}" hint-placeholder-val="{{ false }}">
@@ -767,6 +791,11 @@
               <div style="font-size: 13px; color: {{ textMuted }};">{{ staffSelectedClient.email }}</div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+              <div style="display: flex; gap: 6px;">
+                <button class="nwr-btn" type="button" onClick="{{ setClientStatusPending }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ statusChipPendingBg }}; color: {{ statusChipPendingColor }};">En attente</button>
+                <button class="nwr-btn" type="button" onClick="{{ setClientStatusApproved }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ statusChipApprovedBg }}; color: {{ statusChipApprovedColor }};">Approuvé</button>
+                <button class="nwr-btn" type="button" onClick="{{ setClientStatusRejected }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ statusChipRejectedBg }}; color: {{ statusChipRejectedColor }};">Refusé</button>
+              </div>
               <div style="display: flex; gap: 6px;">
                 <button class="nwr-btn" type="button" onClick="{{ setClientTypeDirect }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ typeChipDirectBg }}; color: {{ typeChipDirectColor }};">Direct</button>
                 <button class="nwr-btn" type="button" onClick="{{ setClientTypeService }}" style="padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid {{ border }}; background: {{ typeChipServiceBg }}; color: {{ typeChipServiceColor }};">Prestataire (résumé)</button>
@@ -1162,6 +1191,7 @@ class Component extends DCLogic {
     userName: '',
     company: '',
     clientType: 'direct',
+    clientStatus: 'pending',
     dataLoading: false,
     selectedQuoteId: null,
     selectedInvoiceId: null,
@@ -1265,10 +1295,12 @@ class Component extends DCLogic {
   }
 
   async loadClientProfile(userId) {
-    const { data, error } = await window.__sb.from('clients').select('company_name, contact_name, client_type').eq('id', userId).single();
+    const { data, error } = await window.__sb.from('clients').select('company_name, contact_name, client_type, status').eq('id', userId).single();
     if (!error && data) {
-      this.setState({ userName: data.contact_name || 'Client', company: data.company_name || '', clientType: data.client_type || 'direct' });
+      this.setState({ userName: data.contact_name || 'Client', company: data.company_name || '', clientType: data.client_type || 'direct', clientStatus: data.status || 'pending' });
+      return data.status || 'pending';
     }
+    return 'pending';
   }
 
   // Determine whether the freshly-authenticated user is a member of the
@@ -1287,15 +1319,15 @@ class Component extends DCLogic {
       await this.loadStaffClients();
     } else {
       this.setState({ isStaff: false, ...(forceView ? { view: 'dashboard' } : {}) });
-      await this.loadClientProfile(userId);
-      await this.loadClientData(userId);
+      const status = await this.loadClientProfile(userId);
+      if (status === 'approved') await this.loadClientData(userId);
     }
   }
 
   async loadStaffClients() {
     this.setState({ dataLoading: true });
     try {
-      const { data, error } = await window.__sb.from('clients').select('id, company_name, contact_name, client_type, email').order('company_name', { ascending: true });
+      const { data, error } = await window.__sb.from('clients').select('id, company_name, contact_name, client_type, email, status').order('company_name', { ascending: true });
       if (error) throw error;
       this.setState({ staffClients: data || [], dataLoading: false });
     } catch (e) {
@@ -1327,6 +1359,18 @@ class Component extends DCLogic {
       staffClients: s.staffClients.map(c => c.id === s.staffSelectedClientId ? { ...c, client_type: type } : c)
     });
     this.showToast('Type de client mis à jour.');
+  }
+
+  async setStaffClientStatus(status) {
+    const s = this.state;
+    if (!s.staffSelectedClientId) return;
+    const { error } = await window.__sb.from('clients').update({ status }).eq('id', s.staffSelectedClientId);
+    if (error) { this.showToast("Impossible de changer le statut d'inscription pour le moment."); return; }
+    this.setState({
+      staffSelectedClient: s.staffSelectedClient ? { ...s.staffSelectedClient, status } : null,
+      staffClients: s.staffClients.map(c => c.id === s.staffSelectedClientId ? { ...c, status } : c)
+    });
+    this.showToast('Statut d\'inscription mis à jour.');
   }
 
   async setTicketStatus(status) {
@@ -1470,7 +1514,7 @@ class Component extends DCLogic {
     clearInterval(this._staffChatMsgTimer);
     localStorage.removeItem('nwr_chat_session_id');
     this.setState({
-      session: null, view: 'home', userName: '', company: '', clientType: 'direct',
+      session: null, view: 'home', userName: '', company: '', clientType: 'direct', clientStatus: 'pending',
       quotes: [], invoices: [], tickets: [], milestones: [],
       selectedQuoteId: null, selectedInvoiceId: null, selectedTicketId: null,
       isStaff: false, staffClients: [], staffSelectedClientId: null, staffSelectedClient: null,
@@ -1803,18 +1847,41 @@ class Component extends DCLogic {
       nextDueLabel: upcoming.length ? 'Prochaine échéance : ' + this.formatDate(upcoming[0].due_date) : 'Aucune échéance à venir pour le moment.'
     };
 
-    const staffClientsView = s.staffClients.map(c => ({
-      ...c,
-      displayName: c.company_name || c.contact_name || 'Client',
-      emailLabel: c.email || '—',
-      typeLabel: c.client_type === 'service' ? 'Prestataire (résumé)' : 'Direct',
-      typeBg: c.client_type === 'service' ? '#fbeed9' : '#e5eefa',
-      typeColor: c.client_type === 'service' ? '#8a5a12' : navy700,
-      select: () => this.selectStaffClient(c.id)
-    }));
+    const registrationBadge = (status) => {
+      if (status === 'approved') return { label: 'Approuvé', bg: '#e4f5ec', color: success };
+      if (status === 'rejected') return { label: 'Refusé', bg: '#fbe6e4', color: danger };
+      return { label: 'En attente', bg: '#fbeed9', color: '#8a5a12' };
+    };
+    const staffClientsView = s.staffClients.map(c => {
+      const rb = registrationBadge(c.status);
+      return {
+        ...c,
+        displayName: c.company_name || c.contact_name || 'Client',
+        emailLabel: c.email || '—',
+        typeLabel: c.client_type === 'service' ? 'Prestataire (résumé)' : 'Direct',
+        typeBg: c.client_type === 'service' ? '#fbeed9' : '#e5eefa',
+        typeColor: c.client_type === 'service' ? '#8a5a12' : navy700,
+        statusLabel: rb.label, statusBg: rb.bg, statusColor: rb.color,
+        select: () => this.selectStaffClient(c.id)
+      };
+    });
     const noStaffClients = s.staffClients.length === 0;
     const staffSelectedIsDirect = !!(s.staffSelectedClient && s.staffSelectedClient.client_type !== 'service');
     const staffSelectedIsService = !!(s.staffSelectedClient && s.staffSelectedClient.client_type === 'service');
+    const staffSelectedStatus = s.staffSelectedClient ? (s.staffSelectedClient.status || 'pending') : 'pending';
+    const staffSelectedIsPending = staffSelectedStatus === 'pending';
+    const staffSelectedIsApproved = staffSelectedStatus === 'approved';
+    const staffSelectedIsRejected = staffSelectedStatus === 'rejected';
+    const pendingRegistrationsCount = s.staffClients.filter(c => (c.status || 'pending') === 'pending').length;
+
+    // Acces client gate par le statut d'inscription (clients.status, voir
+    // supabase_schema_v6.sql) : un client non approuve n'a ni la navigation
+    // ni les donnees de l'espace client, seulement un ecran d'attente/refus.
+    const clientStatus = s.clientStatus || 'pending';
+    const isApprovedClient = clientStatus === 'approved';
+    const clientBlocked = !s.isStaff && !!s.session && !isApprovedClient;
+    const isPendingApproval = clientBlocked && clientStatus === 'pending';
+    const isRejectedApproval = clientBlocked && clientStatus === 'rejected';
 
     // Rapport de suivi de projet par email : declenchement manuel depuis
     // l'espace equipe via un lien mailto (aucun service tiers requis). Le
@@ -1958,21 +2025,30 @@ class Component extends DCLogic {
       navy900, navy700, accent, border, bg, textDark, textMuted, success, danger, clientLogos,
       isPublic, isApp,
       isHome: s.view === 'home', isContact: s.view === 'contact', isLogin: s.view === 'login', isPrivacy: s.view === 'privacy',
-      isDashboard: s.view === 'dashboard', isQuotesList: s.view === 'quotes', isQuoteDetail: s.view === 'quote-detail',
+      isDashboard: s.view === 'dashboard' && !clientBlocked, isQuotesList: s.view === 'quotes', isQuoteDetail: s.view === 'quote-detail',
       isInvoicesList: s.view === 'invoices', isInvoiceDetail: s.view === 'invoice-detail',
       isTicketsList: s.view === 'tickets', isTicketDetail: s.view === 'ticket-detail', isProfile: s.view === 'profile',
       isMilestones: s.view === 'milestones',
       isStaffClients: s.view === 'staff-clients', isStaffClientDetail: s.view === 'staff-client-detail',
       isStaff: s.isStaff, isClient: !s.isStaff,
+      isApprovedClient, clientBlocked, isPendingApproval, isRejectedApproval,
       navStaffClientsBg: sideActive('staff-clients') || sideActive('staff-client-detail') ? '#ffffff1a' : 'transparent', navStaffClientsColor: '#fff',
       goStaffClients: () => this.goStaffClients(),
       staffClientsView, noStaffClients,
+      hasPendingRegistrations: pendingRegistrationsCount > 0, pendingRegistrationsCount,
       staffSelectedClient: s.staffSelectedClient, staffSelectedClientName: s.staffSelectedClient ? (s.staffSelectedClient.company_name || s.staffSelectedClient.contact_name || 'Client') : '',
       staffReportMailto, hasStaffReportEmail, noStaffReportEmail: !!s.staffSelectedClient && !hasStaffReportEmail,
       staffSelectedIsDirect, staffSelectedIsService,
       typeChipDirectBg: staffSelectedIsDirect ? navy900 : '#fff', typeChipDirectColor: staffSelectedIsDirect ? '#fff' : textDark,
       typeChipServiceBg: staffSelectedIsService ? navy900 : '#fff', typeChipServiceColor: staffSelectedIsService ? '#fff' : textDark,
       setClientTypeDirect: () => this.setStaffClientType('direct'), setClientTypeService: () => this.setStaffClientType('service'),
+      staffSelectedIsPending, staffSelectedIsApproved, staffSelectedIsRejected,
+      statusChipPendingBg: staffSelectedIsPending ? navy900 : '#fff', statusChipPendingColor: staffSelectedIsPending ? '#fff' : textDark,
+      statusChipApprovedBg: staffSelectedIsApproved ? navy900 : '#fff', statusChipApprovedColor: staffSelectedIsApproved ? '#fff' : textDark,
+      statusChipRejectedBg: staffSelectedIsRejected ? navy900 : '#fff', statusChipRejectedColor: staffSelectedIsRejected ? '#fff' : textDark,
+      setClientStatusPending: () => this.setStaffClientStatus('pending'),
+      setClientStatusApproved: () => this.setStaffClientStatus('approved'),
+      setClientStatusRejected: () => this.setStaffClientStatus('rejected'),
       staffNewMilestoneTitle: s.staffNewMilestoneTitle, staffNewMilestoneDescription: s.staffNewMilestoneDescription, staffNewMilestoneDueDate: s.staffNewMilestoneDueDate,
       setStaffNewMilestoneTitle: (e) => this.setState({ staffNewMilestoneTitle: e.target.value }),
       setStaffNewMilestoneDescription: (e) => this.setState({ staffNewMilestoneDescription: e.target.value }),
