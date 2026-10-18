@@ -383,36 +383,71 @@
   <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
     <main class="nwr-center-main" style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 48px;">
       <div class="nwr-card-400" style="width: 400px; background: #fff; border: 1px solid {{ border }}; border-radius: 12px; padding: 40px; box-shadow: 0 12px 32px rgba(13,35,64,0.06);">
-        <div style="display: flex; gap: 4px; background: {{ bg }}; border-radius: 8px; padding: 4px; margin-bottom: 28px;">
-          <button class="nwr-btn" onClick="{{ setModeLogin }}" style="flex: 1; padding: 10px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; background: {{ loginTabBg }}; color: {{ loginTabColor }};">Se connecter</button>
-          <button class="nwr-btn" onClick="{{ setModeRegister }}" style="flex: 1; padding: 10px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; background: {{ registerTabBg }}; color: {{ registerTabColor }};">Créer un compte</button>
-        </div>
+        <sc-if value="{{ isLoginFormMode }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; gap: 4px; background: {{ bg }}; border-radius: 8px; padding: 4px; margin-bottom: 28px;">
+            <button class="nwr-btn" onClick="{{ setModeLogin }}" style="flex: 1; padding: 10px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; background: {{ loginTabBg }}; color: {{ loginTabColor }};">Se connecter</button>
+            <button class="nwr-btn" onClick="{{ setModeRegister }}" style="flex: 1; padding: 10px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; background: {{ registerTabBg }}; color: {{ registerTabColor }};">Créer un compte</button>
+          </div>
+        </sc-if>
         <sc-if value="{{ hasAuthNotice }}" hint-placeholder-val="{{ false }}">
           <div style="background: #e4f5ec; color: {{ success }}; padding: 12px 14px; border-radius: 6px; font-size: 13px; line-height: 1.4; margin-bottom: 16px;">{{ authNotice }}</div>
         </sc-if>
         <sc-if value="{{ hasAuthError }}" hint-placeholder-val="{{ false }}">
           <div style="background: #fbe6e4; color: {{ danger }}; padding: 12px 14px; border-radius: 6px; font-size: 13px; line-height: 1.4; margin-bottom: 16px;">{{ authError }}</div>
         </sc-if>
-        <sc-if value="{{ isRegisterMode }}" hint-placeholder-val="{{ false }}">
+
+        <sc-if value="{{ isLoginFormMode }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ isRegisterMode }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-bottom: 16px;">
+              <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Société</label>
+              <input value="{{ registerCompany }}" onChange="{{ setRegisterCompany }}" placeholder="Ma Société SARL" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Nom du contact</label>
+              <input value="{{ registerContactName }}" onChange="{{ setRegisterContactName }}" placeholder="Claire Dubois" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
+            </div>
+          </sc-if>
           <div style="margin-bottom: 16px;">
-            <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Société</label>
-            <input value="{{ registerCompany }}" onChange="{{ setRegisterCompany }}" placeholder="Ma Société SARL" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
+            <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Email</label>
+            <input value="{{ loginEmail }}" onChange="{{ setLoginEmail }}" placeholder="vous@entreprise.fr" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
           </div>
-          <div style="margin-bottom: 16px;">
-            <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Nom du contact</label>
-            <input value="{{ registerContactName }}" onChange="{{ setRegisterContactName }}" placeholder="Claire Dubois" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
+          <div style="margin-bottom: 24px;">
+            <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Mot de passe</label>
+            <input type="password" value="{{ loginPassword }}" onChange="{{ setLoginPassword }}" placeholder="••••••••" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
           </div>
+          <button class="nwr-btn" onClick="{{ login }}" style="width: 100%; background: {{ navy900 }}; color: #fff; border: none; padding: 13px; border-radius: 6px; font-size: 15px; font-weight: 600; margin-bottom: 12px;">{{ loginButtonLabel }}</button>
+          <div style="text-align: center; font-size: 13px; color: {{ textMuted }}; cursor: pointer;" onClick="{{ goForgot }}">Mot de passe oublié ?</div>
         </sc-if>
-        <div style="margin-bottom: 16px;">
-          <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Email</label>
-          <input value="{{ loginEmail }}" onChange="{{ setLoginEmail }}" placeholder="vous@entreprise.fr" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
-        </div>
-        <div style="margin-bottom: 24px;">
-          <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Mot de passe</label>
-          <input type="password" value="{{ loginPassword }}" onChange="{{ setLoginPassword }}" placeholder="••••••••" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
-        </div>
-        <button class="nwr-btn" onClick="{{ login }}" style="width: 100%; background: {{ navy900 }}; color: #fff; border: none; padding: 13px; border-radius: 6px; font-size: 15px; font-weight: 600; margin-bottom: 12px;">{{ loginButtonLabel }}</button>
-        <div style="text-align: center; font-size: 13px; color: {{ textMuted }};">Mot de passe perdu ?</div>
+
+        <sc-if value="{{ isForgotMode }}" hint-placeholder-val="{{ false }}">
+          <h1 style="font-size: 17px; color: {{ navy900 }}; margin: 0 0 8px;">Mot de passe oublié</h1>
+          <sc-if value="{{ forgotNotSent }}" hint-placeholder-val="{{ true }}">
+            <p style="font-size: 13px; color: {{ textMuted }}; line-height: 1.5; margin: 0 0 20px;">Indiquez votre email, nous vous envoyons un lien pour choisir un nouveau mot de passe.</p>
+            <div style="margin-bottom: 20px;">
+              <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Email</label>
+              <input value="{{ forgotEmail }}" onChange="{{ setForgotEmail }}" placeholder="vous@entreprise.fr" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
+            </div>
+            <button class="nwr-btn" onClick="{{ submitForgotEmail }}" style="width: 100%; background: {{ navy900 }}; color: #fff; border: none; padding: 13px; border-radius: 6px; font-size: 15px; font-weight: 600; margin-bottom: 12px;">{{ forgotButtonLabel }}</button>
+          </sc-if>
+          <sc-if value="{{ forgotSent }}" hint-placeholder-val="{{ false }}">
+            <div style="background: #e4f5ec; color: {{ success }}; padding: 12px 14px; border-radius: 6px; font-size: 13px; line-height: 1.5; margin-bottom: 16px;">Si un compte existe avec cet email, un lien de réinitialisation vient d'être envoyé. Pensez à vérifier vos spams.</div>
+          </sc-if>
+          <div style="text-align: center; font-size: 13px; color: {{ textMuted }}; cursor: pointer;" onClick="{{ setModeLogin }}">← Retour à la connexion</div>
+        </sc-if>
+
+        <sc-if value="{{ isResetMode }}" hint-placeholder-val="{{ false }}">
+          <h1 style="font-size: 17px; color: {{ navy900 }}; margin: 0 0 8px;">Choisir un nouveau mot de passe</h1>
+          <p style="font-size: 13px; color: {{ textMuted }}; line-height: 1.5; margin: 0 0 20px;">Minimum 6 caractères.</p>
+          <div style="margin-bottom: 16px;">
+            <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Nouveau mot de passe</label>
+            <input type="password" value="{{ newPassword }}" onChange="{{ setNewPassword }}" placeholder="••••••••" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
+          </div>
+          <div style="margin-bottom: 24px;">
+            <label style="font-size: 13px; font-weight: 600; color: {{ navy900 }}; display: block; margin-bottom: 6px;">Confirmer le mot de passe</label>
+            <input type="password" value="{{ newPasswordConfirm }}" onChange="{{ setNewPasswordConfirm }}" placeholder="••••••••" style="width: 100%; box-sizing: border-box; border: 1px solid {{ border }}; border-radius: 6px; padding: 12px 14px; font-size: 14px; font-family: inherit;">
+          </div>
+          <button class="nwr-btn" onClick="{{ submitNewPassword }}" style="width: 100%; background: {{ navy900 }}; color: #fff; border: none; padding: 13px; border-radius: 6px; font-size: 15px; font-weight: 600;">{{ resetButtonLabel }}</button>
+        </sc-if>
       </div>
     </main>
   </sc-if>
@@ -1187,6 +1222,12 @@ class Component extends DCLogic {
     authLoading: false,
     authError: null,
     authNotice: null,
+    // Reinitialisation du mot de passe (demande par email + saisie du nouveau mot
+    // de passe apres clic sur le lien recu) : voir requestPasswordReset / submitNewPassword.
+    forgotEmail: '',
+    forgotSent: false,
+    newPassword: '',
+    newPasswordConfirm: '',
     session: null,
     userName: '',
     company: '',
@@ -1249,6 +1290,33 @@ class Component extends DCLogic {
       const saved = JSON.parse(localStorage.getItem('newwor_cookie_consent') || 'null');
       if (saved) this.setState({ cookieConsent: saved });
     } catch (e) {}
+    // Lien de reinitialisation de mot de passe expire/deja utilise (Supabase renvoie alors
+    // #error=access_denied&error_code=otp_expired... dans l'URL au lieu d'ouvrir une session) :
+    // on le detecte ici pour afficher un message clair plutot que de laisser la page d'accueil
+    // s'ouvrir silencieusement avec une erreur illisible dans la barre d'adresse.
+    try {
+      const hash = window.location.hash || '';
+      if (hash.indexOf('error=') !== -1) {
+        const params = new URLSearchParams(hash.replace(/^#/, ''));
+        const errCode = params.get('error_code');
+        this.setState({
+          view: 'login',
+          authMode: errCode === 'otp_expired' ? 'forgot' : 'login',
+          authError: errCode === 'otp_expired'
+            ? 'Ce lien a expiré ou a déjà été utilisé. Merci de redemander un nouveau lien ci-dessous.'
+            : 'Le lien utilisé n\'est plus valide. Merci de réessayer.'
+        });
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    } catch (e) {}
+    // Lien de reinitialisation valide : Supabase etablit une session speciale "recovery" et
+    // emet cet evenement au chargement de la page. On bascule alors sur le formulaire de
+    // saisie du nouveau mot de passe, sans connecter la personne a l'espace client/equipe.
+    window.__sb.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        this.setState({ view: 'login', authMode: 'reset', authError: null, authNotice: null });
+      }
+    });
     // Session Supabase deja active (visite precedente) : on recharge le profil et les
     // donnees sans repasser par l'ecran de connexion. Une session anonyme (chat en
     // direct, voir plus bas) n'est jamais traitee comme une connexion client/equipe.
@@ -1259,6 +1327,21 @@ class Component extends DCLogic {
         await this.afterAuth(data.session.user.id, { forceView: false });
       }
     } catch (e) { /* pas de session valide, on reste sur le site public */ }
+    // Raccourcis d'application (manifest.json "shortcuts", clic droit sur l'icone installee ou
+    // appui long sur mobile) : ouvrent directement une page si une session client deja approuvee
+    // est active sur cet appareil. Sans session (ou compte non approuve/equipe), on ignore
+    // simplement le raccourci -- la personne atterrit normalement sur l'ecran de connexion.
+    try {
+      const shortcutMap = { dashboard: 'dashboard', devis: 'quotes', factures: 'invoices', tickets: 'tickets' };
+      const shortcutToken = (window.location.hash || '').replace(/^#/, '');
+      const shortcutTarget = shortcutMap[shortcutToken];
+      if (shortcutTarget) {
+        if (this.state.session && !this.state.isStaff && this.state.clientStatus === 'approved') {
+          this.setState({ view: shortcutTarget });
+        }
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    } catch (e) {}
     await this.restoreChatSession();
   }
 
@@ -1520,6 +1603,50 @@ class Component extends DCLogic {
       isStaff: false, staffClients: [], staffSelectedClientId: null, staffSelectedClient: null,
       chatOpen: false, chatStarted: false, chatSessionId: null, chatMessages: [], chatDraft: '', chatVisitorName: '',
       staffChatSessions: [], staffChatSelectedId: null, staffChatSelectedSession: null, staffChatMessages: [], staffChatDraft: ''
+    });
+  }
+
+  async requestPasswordReset() {
+    const s = this.state;
+    if (s.authLoading) return;
+    if (!s.forgotEmail) {
+      this.setState({ authError: 'Merci de renseigner votre email.' });
+      return;
+    }
+    this.setState({ authLoading: true, authError: null, authNotice: null });
+    // On ignore volontairement le resultat "error" ici (hors erreur reseau) : ne jamais
+    // reveler si un email existe ou non dans la base est une bonne pratique de securite,
+    // donc on affiche toujours le meme message de confirmation.
+    await window.__sb.auth.resetPasswordForEmail(s.forgotEmail, {
+      redirectTo: 'https://newwor.elm-saas.org/'
+    });
+    this.setState({ authLoading: false, forgotSent: true, authError: null });
+  }
+
+  async submitNewPassword() {
+    const s = this.state;
+    if (s.authLoading) return;
+    if (!s.newPassword || s.newPassword.length < 6) {
+      this.setState({ authError: 'Le mot de passe doit contenir au moins 6 caractères.' });
+      return;
+    }
+    if (s.newPassword !== s.newPasswordConfirm) {
+      this.setState({ authError: 'Les deux mots de passe ne correspondent pas.' });
+      return;
+    }
+    this.setState({ authLoading: true, authError: null });
+    const { error } = await window.__sb.auth.updateUser({ password: s.newPassword });
+    if (error) {
+      this.setState({ authLoading: false, authError: this.translateAuthError(error.message) });
+      return;
+    }
+    // On deconnecte volontairement apres coup : la session "recovery" ouverte par le lien
+    // email ne doit jamais servir a entrer directement dans l'espace client/equipe.
+    try { await window.__sb.auth.signOut(); } catch (e) {}
+    this.setState({
+      authLoading: false, session: null, isStaff: false, view: 'login', authMode: 'login',
+      newPassword: '', newPasswordConfirm: '', forgotEmail: '', forgotSent: false,
+      authNotice: 'Mot de passe mis à jour — vous pouvez vous connecter.'
     });
   }
 
@@ -2025,10 +2152,13 @@ class Component extends DCLogic {
       navy900, navy700, accent, border, bg, textDark, textMuted, success, danger, clientLogos,
       isPublic, isApp,
       isHome: s.view === 'home', isContact: s.view === 'contact', isLogin: s.view === 'login', isPrivacy: s.view === 'privacy',
-      isDashboard: s.view === 'dashboard' && !clientBlocked, isQuotesList: s.view === 'quotes', isQuoteDetail: s.view === 'quote-detail',
-      isInvoicesList: s.view === 'invoices', isInvoiceDetail: s.view === 'invoice-detail',
-      isTicketsList: s.view === 'tickets', isTicketDetail: s.view === 'ticket-detail', isProfile: s.view === 'profile',
-      isMilestones: s.view === 'milestones',
+      // !clientBlocked sur chaque vue cote client (pas seulement isDashboard) : empeche qu'un
+      // lien direct (raccourci d'app, ancien favori, saisie manuelle du hash) ne fasse
+      // apparaitre des donnees d'un compte dont l'inscription n'est pas encore approuvee.
+      isDashboard: s.view === 'dashboard' && !clientBlocked, isQuotesList: s.view === 'quotes' && !clientBlocked, isQuoteDetail: s.view === 'quote-detail' && !clientBlocked,
+      isInvoicesList: s.view === 'invoices' && !clientBlocked, isInvoiceDetail: s.view === 'invoice-detail' && !clientBlocked,
+      isTicketsList: s.view === 'tickets' && !clientBlocked, isTicketDetail: s.view === 'ticket-detail' && !clientBlocked, isProfile: s.view === 'profile' && !clientBlocked,
+      isMilestones: s.view === 'milestones' && !clientBlocked,
       isStaffClients: s.view === 'staff-clients', isStaffClientDetail: s.view === 'staff-client-detail',
       isStaff: s.isStaff, isClient: !s.isStaff,
       isApprovedClient, clientBlocked, isPendingApproval, isRejectedApproval,
@@ -2130,6 +2260,20 @@ class Component extends DCLogic {
       hasAuthError: !!s.authError, authError: s.authError,
       hasAuthNotice: !!s.authNotice, authNotice: s.authNotice,
       login: () => (s.authMode === 'register' ? this.handleRegister() : this.handleLogin()),
+      isLoginFormMode: s.authMode === 'login' || s.authMode === 'register',
+      isForgotMode: s.authMode === 'forgot',
+      isResetMode: s.authMode === 'reset',
+      goForgot: () => this.setState({ authMode: 'forgot', authError: null, authNotice: null, forgotSent: false }),
+      forgotEmail: s.forgotEmail,
+      setForgotEmail: (e) => this.setState({ forgotEmail: e.target.value, authError: null }),
+      forgotSent: !!s.forgotSent, forgotNotSent: !s.forgotSent,
+      forgotButtonLabel: s.authLoading ? 'Patientez…' : 'Envoyer le lien',
+      submitForgotEmail: () => this.requestPasswordReset(),
+      newPassword: s.newPassword, newPasswordConfirm: s.newPasswordConfirm,
+      setNewPassword: (e) => this.setState({ newPassword: e.target.value, authError: null }),
+      setNewPasswordConfirm: (e) => this.setState({ newPasswordConfirm: e.target.value, authError: null }),
+      resetButtonLabel: s.authLoading ? 'Patientez…' : 'Valider le nouveau mot de passe',
+      submitNewPassword: () => this.submitNewPassword(),
       userName: s.userName, company: s.company, firstName: (s.userName || 'là').split(' ')[0],
       profileEmail: s.session && s.session.user ? s.session.user.email : '',
       pendingQuotesCount, unpaidInvoicesTotal, openTicketsCount, recentActivity,
@@ -2231,15 +2375,6 @@ class Component extends DCLogic {
 <!-- PWA : enregistrement du service worker + aide a l'installation -->
 <script>
 (function () {
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-      navigator.serviceWorker.register('./sw.js').catch(function (err) {
-        console.warn('Service worker non enregistre :', err);
-      });
-    });
-  }
-
-  // Bandeau "Ajouter a l'ecran d'accueil" pour iOS Safari (pas d'invite automatique sur iOS)
   function isIos() {
     return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
   }
@@ -2248,6 +2383,103 @@ class Component extends DCLogic {
       window.matchMedia('(display-mode: standalone)').matches;
   }
 
+  // Les bandeaux du bas (installation / mise a jour) peuvent en theorie apparaitre tous les
+  // deux a la fois : on empile le second au-dessus du premier plutot que de les superposer.
+  function stackedBottom(otherId) {
+    return document.getElementById(otherId) ? '96px' : '16px';
+  }
+
+  // ------------------------------------------------------------------------
+  // Enregistrement du service worker + bandeau "nouvelle version disponible"
+  // ------------------------------------------------------------------------
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js').then(function (reg) {
+        // Une version etait deja installee et en attente avant meme ce chargement
+        // (la personne avait laisse l'onglet ouvert lors d'une precedente mise a jour).
+        if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner(reg);
+        reg.addEventListener('updatefound', function () {
+          var installing = reg.installing;
+          if (!installing) return;
+          installing.addEventListener('statechange', function () {
+            if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+              showUpdateBanner(reg);
+            }
+          });
+        });
+      }).catch(function (err) {
+        console.warn('Service worker non enregistre :', err);
+      });
+
+      var reloadingAfterUpdate = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (reloadingAfterUpdate) return;
+        reloadingAfterUpdate = true;
+        window.location.reload();
+      });
+    });
+  }
+
+  function showUpdateBanner(reg) {
+    if (document.getElementById('nwr-update-banner')) return;
+    var banner = document.createElement('div');
+    banner.id = 'nwr-update-banner';
+    banner.setAttribute('role', 'status');
+    banner.style.cssText = 'position:fixed;left:16px;right:16px;bottom:' + stackedBottom('nwr-install-banner') + ';z-index:1100;background:#0d2340;color:#fff;padding:14px 16px;border-radius:10px;box-shadow:0 8px 24px rgba(13,35,64,0.35);font-family:Helvetica,Arial,sans-serif;font-size:14px;display:flex;align-items:center;gap:12px;max-width:420px;margin:0 auto;';
+    banner.innerHTML = '<span style="flex:1;line-height:1.4;">Une nouvelle version du site est disponible.</span>' +
+      '<button style="background:#fff;border:none;color:#0d2340;border-radius:6px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">Mettre à jour</button>';
+    document.body.appendChild(banner);
+    banner.querySelector('button').addEventListener('click', function () {
+      if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      banner.remove();
+    });
+  }
+
+  // ------------------------------------------------------------------------
+  // Bandeau "Installer l'application" (Android / Chrome, Edge desktop...) : on intercepte
+  // l'invite native pour afficher notre propre bouton au lieu de ne compter que sur le
+  // menu cache du navigateur. Rien a faire sur iOS : pas d'evenement equivalent, voir
+  // le bandeau "Ajouter a l'ecran d'accueil" plus bas qui le remplace sur cette plateforme.
+  // ------------------------------------------------------------------------
+  var deferredInstallPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    if (!isInStandaloneMode() && !localStorage.getItem('nwr-install-dismissed')) showInstallBanner();
+  });
+
+  window.addEventListener('appinstalled', function () {
+    deferredInstallPrompt = null;
+    var b = document.getElementById('nwr-install-banner');
+    if (b) b.remove();
+  });
+
+  function showInstallBanner() {
+    if (document.getElementById('nwr-install-banner')) return;
+    var banner = document.createElement('div');
+    banner.id = 'nwr-install-banner';
+    banner.setAttribute('role', 'status');
+    banner.style.cssText = 'position:fixed;left:16px;right:16px;bottom:' + stackedBottom('nwr-update-banner') + ';z-index:1000;background:#0d2340;color:#fff;padding:14px 16px;border-radius:10px;box-shadow:0 8px 24px rgba(13,35,64,0.35);font-family:Helvetica,Arial,sans-serif;font-size:14px;display:flex;align-items:center;gap:12px;max-width:420px;margin:0 auto;';
+    banner.innerHTML = '<span style="flex:1;line-height:1.4;">Installez NEWWOR Consulting sur cet appareil pour y accéder plus rapidement.</span>' +
+      '<button id="nwr-install-btn" style="background:#fff;border:none;color:#0d2340;border-radius:6px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">Installer</button>' +
+      '<button id="nwr-install-dismiss" style="background:transparent;border:1px solid rgba(255,255,255,0.5);color:#fff;border-radius:6px;padding:7px 10px;font-size:13px;cursor:pointer;">Non merci</button>';
+    document.body.appendChild(banner);
+    banner.querySelector('#nwr-install-btn').addEventListener('click', function () {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      deferredInstallPrompt.userChoice.finally(function () {
+        deferredInstallPrompt = null;
+        banner.remove();
+      });
+    });
+    banner.querySelector('#nwr-install-dismiss').addEventListener('click', function () {
+      banner.remove();
+      localStorage.setItem('nwr-install-dismissed', '1');
+    });
+  }
+
+  // Bandeau "Ajouter a l'ecran d'accueil" pour iOS Safari (pas d'invite automatique sur iOS)
   if (isIos() && !isInStandaloneMode() && !sessionStorage.getItem('nwr-ios-banner-dismissed')) {
     window.addEventListener('load', function () {
       var banner = document.createElement('div');
@@ -2262,6 +2494,35 @@ class Component extends DCLogic {
       document.body.appendChild(banner);
     });
   }
+
+  // ------------------------------------------------------------------------
+  // Indicateur de connexion : bandeau en haut de l'ecran tant que l'appareil est hors
+  // ligne, confirmation breve au retour du reseau. Utile des que des actions (connexion,
+  // devis, factures, tickets) echoueraient silencieusement sans ce repere.
+  // ------------------------------------------------------------------------
+  var offlineBanner = null;
+
+  function showOfflineBanner() {
+    if (offlineBanner) return;
+    offlineBanner = document.createElement('div');
+    offlineBanner.setAttribute('role', 'status');
+    offlineBanner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:1200;background:#8a5a12;color:#fff;padding:9px 16px;text-align:center;font-family:Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;';
+    offlineBanner.textContent = "Vous êtes hors ligne — certaines actions (connexion, devis, factures, tickets) ne fonctionneront pas tant que la connexion n'est pas rétablie.";
+    document.body.appendChild(offlineBanner);
+  }
+
+  function hideOfflineBannerWithConfirmation() {
+    if (!offlineBanner) return;
+    var b = offlineBanner;
+    offlineBanner = null;
+    b.style.background = '#1d7a4c';
+    b.textContent = 'Connexion rétablie.';
+    setTimeout(function () { b.remove(); }, 2500);
+  }
+
+  window.addEventListener('offline', showOfflineBanner);
+  window.addEventListener('online', hideOfflineBannerWithConfirmation);
+  if (!navigator.onLine) showOfflineBanner();
 })();
 </script>
 </body>

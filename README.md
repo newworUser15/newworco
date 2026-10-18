@@ -154,6 +154,31 @@ l'equipe ne l'a pas valide manuellement.
   automatiquement une seule fois (pas de blocage retroactif) — seuls les comptes crees apres
   ce script demarrent en attente de validation.
 
+## Mot de passe oublié
+Depuis l'ecran de connexion ("Espace client"), le lien "Mot de passe oublié ?" ouvre un petit
+formulaire : la personne saisit son email, Supabase lui envoie un lien de reinitialisation
+(`window.__sb.auth.resetPasswordForEmail`). En cliquant sur ce lien, elle revient sur le site
+qui detecte automatiquement l'evenement `PASSWORD_RECOVERY` et affiche un formulaire "Choisir
+un nouveau mot de passe" (`window.__sb.auth.updateUser`). Une fois valide, elle est deconnectee
+de la session temporaire ouverte par le lien et invitee a se reconnecter normalement.
+- Le message de confirmation d'envoi est toujours le meme, que l'email existe ou non dans la
+  base (anti-enumeration : on ne revele jamais si une adresse est inscrite).
+- Si le lien recu par email a expire ou a deja ete utilise (Supabase renvoie alors
+  `#error=access_denied&error_code=otp_expired...` dans l'URL), le site l'intercepte et affiche
+  directement le formulaire "Mot de passe oublié" avec un message clair, au lieu de laisser
+  apparaitre une erreur illisible dans la barre d'adresse.
+- **Site URL / Redirect URLs** : dans Supabase → Authentication → URL Configuration, le "Site
+  URL" et au moins une "Redirect URL" doivent pointer vers le vrai domaine du site (ici
+  `https://newwor.elm-saas.org`), sinon les liens de reinitialisation renvoient par defaut vers
+  `http://localhost:3000`.
+- **Important pour un usage reel** : Supabase envoie ces emails depuis son service integre, qui
+  a une limite de volume tres basse (quelques emails par heure) et un expediteur non personnalise.
+  Pour un vrai volume d'utilisateurs, prevoir de configurer un fournisseur SMTP personnalise dans
+  Supabase → Authentication → Emails → SMTP Settings.
+- Pour un compte equipe (staff) que vous gerez vous-meme, inutile de passer par cet email : vous
+  pouvez definir le mot de passe directement dans Supabase → Authentication → Users → fiche du
+  compte → "Reset password" (saisie directe, sans lien).
+
 ## Bibliotheques vendorisees (`assets/vendor/`)
 Le site utilise React, ReactDOM et Babel Standalone (pour transformer le JSX directement dans le
 navigateur). Ces 3 fichiers etaient a l'origine charges depuis `unpkg.com` a chaque demarrage —
@@ -186,11 +211,51 @@ debordaient sur petit ecran. Ajouts dans le `<style>` de `index.html` (sous 768p
   `<style>` de `index.html` si ce comportement doit un jour etre restaure pour une page precise.
 
 ## PWA — installation et compatibilite
-- Chrome / Edge (desktop et Android) : invite d'installation automatique.
+- Chrome / Edge (desktop et Android) : un bandeau personnalise "Installer NEWWOR Consulting sur cet appareil" apparait (au lieu de ne compter que sur le menu cache du navigateur), construit a partir de l'evenement `beforeinstallprompt`. "Non merci" le masque definitivement sur cet appareil (`localStorage`).
 - Safari iOS : pas d'invite automatique ; un bandeau propose "Partager → Sur l'ecran d'accueil". Le stockage local peut etre vide par iOS apres 7 jours sans ouverture si le site n'a pas ete ajoute a l'ecran d'accueil.
 - Firefox : fonctionne comme un site classique si l'installation n'est pas proposee (repli automatique, `display_override`).
 - HTTPS obligatoire pour le service worker — deja le cas sur GitHub Pages.
-- Apres toute modification de `index.html`, `support.js` ou des assets, incrementer `CACHE_NAME` dans `sw.js` (ex. `newwor-shell-v4`) pour forcer la mise a jour du cache chez les visiteurs.
+
+### Mise a jour du service worker
+Depuis la v13 (`sw.js`), une nouvelle version installee ne prend plus la main automatiquement :
+elle reste "en attente" et la page affiche un bandeau "Une nouvelle version du site est disponible
+— Mettre à jour". Ca evite qu'une mise a jour interrompe en silence quelqu'un en train de remplir
+un formulaire. Apres toute modification de `index.html`, `support.js` ou des assets, incrementer
+`CACHE_NAME` dans `sw.js` (ex. `newwor-shell-v14`) comme avant — c'est ce qui declenche la detection
+de nouvelle version chez les visiteurs qui ont deja le site ouvert ou installe.
+
+### Indicateur de connexion
+Un bandeau orange apparait en haut de l'ecran des que l'appareil perd la connexion ("Vous êtes hors
+ligne — certaines actions ne fonctionneront pas"), et se transforme brievement en confirmation verte
+("Connexion rétablie") au retour du reseau avant de disparaitre. Purement informatif, cote
+navigateur (`window.addEventListener('online'/'offline', ...)`), independant du service worker.
+
+### Raccourcis d'application
+`manifest.json` declare 4 raccourcis (clic droit sur l'icone installee sur desktop, appui long sur
+mobile) : **Tableau de bord**, **Devis**, **Factures**, **Tickets**. Chacun pointe vers `./#dashboard`,
+`./#devis`, `./#factures` ou `./#tickets` ; au chargement, si une session client **deja approuvee**
+est active sur l'appareil, le site ouvre directement la page correspondante (sinon le raccourci est
+simplement ignore et l'ecran de connexion s'affiche normalement). Cote securite : chaque vue client
+(tableau de bord, devis, factures, tickets, suivi de projet, profil) verifie desormais individuellement
+que le compte est approuve (`!clientBlocked`), pas seulement le tableau de bord comme avant — un lien
+direct ne peut donc jamais exposer les donnees d'un compte en attente de validation.
+
+### Captures d'ecran (ecran d'installation enrichi sur Chrome/Edge)
+`manifest.json` reference deux captures dans `assets/screenshots/` (`desktop-accueil.png` en
+`form_factor: wide`, `mobile-accueil.png` en `narrow`) montrant la page d'accueil publique. A
+regenerer et remplacer si le design de la page d'accueil change significativement.
+
+### A savoir : rafraichissement du tableau de bord client juste apres connexion
+En testant ces ameliorations, un comportement a ete observe sur le tableau de bord client : juste
+apres une connexion tres rapide (reseau tres rapide ou donnees deja en cache), les compteurs
+("Devis en attente", "Factures impayées", "Tickets ouverts") peuvent occasionnellement rester a 0
+le temps d'un rafraichissement manuel ou d'un changement de page, alors que les donnees sont bien
+chargees correctement en arriere-plan (visibles immediatement si on va sur "Devis"/"Factures"/
+"Tickets"). Ca ressemble a un probleme d'affichage (l'ecran ne se redessine pas tout de suite) plutot
+qu'a une perte de donnees, et semble lie au moteur de rendu du framework (`support.js`) plutot qu'au
+code de ce site. Non corrige ici (hors perimetre des ameliorations PWA demandees, et risque de
+modifier `support.js` sans l'avoir pleinement audite) — a signaler si des clients remontent le meme
+symptome.
 
 ## Publication (GitHub Pages)
 Settings → Pages → Source: `Deploy from a branch` → branche `master`, dossier `/ (root)`.

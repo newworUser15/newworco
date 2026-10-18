@@ -4,7 +4,7 @@
 //  - fichiers statiques (support.js, images, manifest, icones) : cache en priorite, mise a jour en arriere-plan
 //  - tout le reste (formulaires, futures API, requetes cross-origin) : jamais intercepte, toujours reseau direct
 
-const CACHE_NAME = 'newwor-shell-v11';
+const CACHE_NAME = 'newwor-shell-v13';
 
 const APP_SHELL = [
   './',
@@ -33,7 +33,12 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
+    // Pas de self.skipWaiting() automatique ici : une mise a jour installee reste "en attente"
+    // tant que la personne n'a pas clique sur "Mettre a jour" (bandeau affiche par la page --
+    // voir index.html), qui envoie alors le message SKIP_WAITING ci-dessous. Ca evite qu'une
+    // nouvelle version prenne la main en silence pendant qu'un formulaire est en cours de
+    // remplissage. Sur une toute premiere installation (aucune version active avant), ce
+    // comportement ne change rien : il n'y a rien en attente de ce depart.
   );
 });
 
@@ -45,6 +50,10 @@ self.addEventListener('activate', (event) => {
       ))
       .then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('fetch', (event) => {
